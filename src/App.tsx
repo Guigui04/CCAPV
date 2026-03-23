@@ -15,15 +15,9 @@ export default function App() {
       <Route path="/news/:id" element={<NewsDetailPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/admin" element={
-        <ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>
-      } />
-      <Route path="/admin/news" element={
-        <ProtectedRoute requireAdmin><AdminNews /></ProtectedRoute>
-      } />
-      <Route path="/admin/feedback" element={
-        <ProtectedRoute requireAdmin><AdminFeedback /></ProtectedRoute>
-      } />
+      <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/news" element={<ProtectedRoute requireAdmin><AdminNews /></ProtectedRoute>} />
+      <Route path="/admin/feedback" element={<ProtectedRoute requireAdmin><AdminFeedback /></ProtectedRoute>} />
     </Routes>
   )
 }
