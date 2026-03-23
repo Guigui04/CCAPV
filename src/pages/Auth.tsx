@@ -55,7 +55,7 @@ const Auth: React.FC = () => {
 
     try {
       // Mock login/signup
-      const role = formData.email === 'guillaumegiraud04@gmail.com' ? 'admin' : 'user';
+      const role = formData.email === 'admin@ccapv.com' ? 'admin' : 'user';
       login(formData.email, {
         firstName: formData.firstName || (isLogin ? 'Utilisateur' : ''),
         lastName: formData.lastName || (isLogin ? 'Démo' : ''),
@@ -228,7 +228,7 @@ const Auth: React.FC = () => {
             <button 
               onClick={() => {
                 setIsLogin(true);
-                setFormData({ ...formData, email: 'guillaumegiraud04@gmail.com', password: 'admin123' });
+                setFormData({ ...formData, email: 'admin@ccapv.com', password: 'admin123' });
               }}
               className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold hover:bg-indigo-100 transition-all"
             >
