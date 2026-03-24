@@ -6,16 +6,16 @@ import {
   deleteNews,
   togglePublished,
 } from '../../lib/newsService'
-import { CATEGORIES, getCategoryById } from '../../constants'
+import { TABS, getCategoryById } from '../../constants'
 import AdminLayout from '../../components/AdminLayout'
 
 const EMPTY = {
   title: '',
-  excerpt: '',
+  summary: '',
   content: '',
-  category: 'sante',
+  category_id: 'parcours-scolaires',
   image_url: '',
-  published: false,
+  status: 'draft',
 }
 
 export default function AdminNews() {
@@ -51,10 +51,18 @@ export default function AdminNews() {
     e.preventDefault()
     setSaving(true)
     try {
+      const payload = {
+        title: form.title,
+        summary: form.summary,
+        content: form.content,
+        category_id: form.category_id,
+        image_url: form.image_url,
+        status: form.status,
+      }
       if (modal?.id) {
-        await updateNews(modal.id, form)
+        await updateNews(modal.id, payload)
       } else {
-        await createNews(form)
+        await createNews(payload)
       }
       setModal(false)
       load()
@@ -88,7 +96,7 @@ export default function AdminNews() {
             <thead>
               <tr className="border-b border-slate-100 text-left">
                 <th className="px-4 py-3 text-slate-500 font-medium">Titre</th>
-                <th className="px-4 py-3 text-slate-500 font-medium">Catégorie</th>
+                <th className="px-4 py-3 text-slate-500 font-medium">Categorie</th>
                 <th className="px-4 py-3 text-slate-500 font-medium">Statut</th>
                 <th className="px-4 py-3 text-slate-500 font-medium">Date</th>
                 <th className="px-4 py-3 text-slate-500 font-medium text-right">
@@ -98,7 +106,7 @@ export default function AdminNews() {
             </thead>
             <tbody>
               {articles.map((a) => {
-                const cat = getCategoryById(a.category)
+                const cat = getCategoryById(a.category_id)
                 return (
                   <tr
                     key={a.id}
@@ -109,21 +117,21 @@ export default function AdminNews() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="badge-blue">
-                        {cat?.icon} {cat?.label ?? a.category}
+                        {cat?.tabIcon} {cat?.label ?? a.category_id}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() =>
-                          togglePublished(a.id, !a.published).then(load)
+                          togglePublished(a.id, a.status).then(load)
                         }
                       >
                         <span
                           className={
-                            a.published ? 'badge-green' : 'badge-gray'
+                            a.status === 'published' ? 'badge-green' : 'badge-gray'
                           }
                         >
-                          {a.published ? '✓ Publié' : '○ Brouillon'}
+                          {a.status === 'published' ? '✓ Publie' : '○ Brouillon'}
                         </span>
                       </button>
                     </td>
@@ -170,7 +178,7 @@ export default function AdminNews() {
             onClick={() => setPage((p) => p - 1)}
             className="btn-secondary btn-sm disabled:opacity-40"
           >
-            ← Précédent
+            &larr; Precedent
           </button>
           <span className="text-sm text-slate-500">
             Page {page}/{totalPages}
@@ -180,7 +188,7 @@ export default function AdminNews() {
             onClick={() => setPage((p) => p + 1)}
             className="btn-secondary btn-sm disabled:opacity-40"
           >
-            Suivant →
+            Suivant &rarr;
           </button>
         </div>
       )}
@@ -216,32 +224,36 @@ export default function AdminNews() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Catégorie
+                  Categorie
                 </label>
                 <select
                   className="input-field"
-                  value={form.category}
+                  value={form.category_id}
                   onChange={(e) =>
-                    setForm((f: any) => ({ ...f, category: e.target.value }))
+                    setForm((f: any) => ({ ...f, category_id: e.target.value }))
                   }
                 >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon} {c.label}
-                    </option>
+                  {TABS.map((tab) => (
+                    <optgroup key={tab.id} label={`${tab.icon} ${tab.label}`}>
+                      {tab.subcategories.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Résumé
+                  Resume
                 </label>
                 <textarea
                   className="input-field resize-none"
                   rows={2}
-                  value={form.excerpt}
+                  value={form.summary}
                   onChange={(e) =>
-                    setForm((f: any) => ({ ...f, excerpt: e.target.value }))
+                    setForm((f: any) => ({ ...f, summary: e.target.value }))
                   }
                 />
               </div>
@@ -274,14 +286,14 @@ export default function AdminNews() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={form.published}
+                  checked={form.status === 'published'}
                   onChange={(e) =>
-                    setForm((f: any) => ({ ...f, published: e.target.checked }))
+                    setForm((f: any) => ({ ...f, status: e.target.checked ? 'published' : 'draft' }))
                   }
                   className="w-4 h-4 accent-indigo-600 rounded"
                 />
                 <span className="text-sm font-medium text-slate-700">
-                  Publier immédiatement
+                  Publier immediatement
                 </span>
               </label>
               <div className="flex gap-3 pt-2">

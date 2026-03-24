@@ -1,33 +1,54 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getPublishedNews } from '../lib/newsService'
-import { CATEGORIES, getCategoryById } from '../constants'
-import { ArrowRight, Calendar } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { TABS, getCategoryById, getTabById } from '../constants'
+import { ArrowRight, Calendar, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn, formatDate } from '../utils'
 
 export default function HomePage() {
   const [articles, setArticles] = useState<any[]>([])
-  const [category, setCategory] = useState('')
+  const [selectedTab, setSelectedTab] = useState<string | null>(null)
+  const [selectedSub, setSelectedSub] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
-    getPublishedNews({ category: category || undefined, limit: 20 })
+    // If a subcategory is selected, filter by it; if only a tab, filter by all its subcategories
+    const categoryFilter = selectedSub || undefined
+    const tabFilter = !selectedSub && selectedTab ? selectedTab : undefined
+
+    getPublishedNews({ category: categoryFilter, tab: tabFilter, limit: 20 })
       .then(({ data }) => setArticles(data))
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [category])
+  }, [selectedTab, selectedSub])
 
   const featured = articles.slice(0, 3)
 
+  function handleTabClick(tabId: string) {
+    if (selectedTab === tabId) {
+      setSelectedTab(null)
+      setSelectedSub(null)
+    } else {
+      setSelectedTab(tabId)
+      setSelectedSub(null)
+    }
+  }
+
+  function handleSubClick(subId: string) {
+    setSelectedSub(selectedSub === subId ? null : subId)
+  }
+
+  const activeTab = selectedTab ? getTabById(selectedTab) : null
+
   return (
     <div className="space-y-8 pb-8">
-      {/* À la une */}
+      {/* A la une */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
-            À la une
+            A la une
           </h2>
           <Link
             to="/explorer"
@@ -37,16 +58,16 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {loading ? (
+        {loading && !selectedTab ? (
           <div className="h-48 bg-slate-200 rounded-3xl animate-pulse" />
         ) : featured.length === 0 ? (
           <div className="h-48 bg-white rounded-3xl border border-slate-200 flex items-center justify-center text-slate-400 font-medium">
-            Aucune actualité pour le moment
+            Aucune actualite pour le moment
           </div>
         ) : (
           <div className="flex overflow-x-auto gap-4 pb-2 snap-x scrollbar-hide -mx-4 px-4">
             {featured.map((a, i) => {
-              const cat = getCategoryById(a.category)
+              const cat = getCategoryById(a.category_id)
               return (
                 <motion.div
                   key={a.id}
@@ -68,10 +89,10 @@ export default function HomePage() {
                       <div
                         className={cn(
                           'w-full h-full flex items-center justify-center text-5xl',
-                          cat?.color ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
+                          cat?.tabColor ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
                         )}
                       >
-                        {cat?.icon ?? '📰'}
+                        {cat?.tabIcon ?? '📰'}
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -98,38 +119,66 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Catégories */}
+      {/* Onglets */}
       <section>
         <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight mb-4">
-          Catégories
+          Thematiques
         </h2>
-        <div className="grid grid-cols-4 gap-3">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setCategory(category === c.id ? '' : c.id)}
-              className="flex flex-col items-center gap-1.5"
-            >
-              <div
-                className={cn(
-                  'w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-sm transition-all duration-200',
-                  category === c.id
-                    ? 'bg-indigo-600 scale-105 shadow-indigo-200 ring-2 ring-indigo-400 ring-offset-2'
-                    : 'bg-white border border-slate-100 hover:shadow-md'
-                )}
-              >
-                {c.icon}
+        <div className="space-y-2">
+          {TABS.map((tab) => {
+            const isOpen = selectedTab === tab.id
+            return (
+              <div key={tab.id}>
+                <button
+                  onClick={() => handleTabClick(tab.id)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-200',
+                    isOpen
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                      : 'bg-white border border-slate-100 text-slate-700 hover:shadow-md'
+                  )}
+                >
+                  <span className="text-2xl">{tab.icon}</span>
+                  <span className="font-bold text-sm flex-1 text-left">{tab.label}</span>
+                  <ChevronDown
+                    size={18}
+                    className={cn(
+                      'transition-transform duration-200',
+                      isOpen ? 'rotate-180' : ''
+                    )}
+                  />
+                </button>
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex flex-wrap gap-2 px-2 pt-2 pb-1">
+                        {tab.subcategories.map((sub) => (
+                          <button
+                            key={sub.id}
+                            onClick={() => handleSubClick(sub.id)}
+                            className={cn(
+                              'px-3.5 py-2 rounded-xl text-xs font-bold transition-all border',
+                              selectedSub === sub.id
+                                ? 'bg-indigo-100 border-indigo-300 text-indigo-700'
+                                : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-600'
+                            )}
+                          >
+                            {sub.label}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-              <span
-                className={cn(
-                  'text-[10px] font-bold uppercase tracking-wide text-center leading-tight',
-                  category === c.id ? 'text-indigo-600' : 'text-slate-500'
-                )}
-              >
-                {c.label}
-              </span>
-            </button>
-          ))}
+            )
+          })}
         </div>
       </section>
 
@@ -137,14 +186,21 @@ export default function HomePage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
-            {category ? getCategoryById(category)?.label : 'Dernières infos'}
+            {selectedSub
+              ? getCategoryById(selectedSub)?.label
+              : activeTab
+                ? activeTab.label
+                : 'Dernieres infos'}
           </h2>
-          {category && (
+          {(selectedTab || selectedSub) && (
             <button
-              onClick={() => setCategory('')}
+              onClick={() => {
+                setSelectedTab(null)
+                setSelectedSub(null)
+              }}
               className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-wider"
             >
-              Réinitialiser
+              Reinitialiser
             </button>
           )}
         </div>
@@ -158,13 +214,13 @@ export default function HomePage() {
         ) : articles.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
             <p className="text-4xl mb-3">🔍</p>
-            <p className="text-slate-500 font-medium">Aucune information trouvée</p>
-            <p className="text-slate-400 text-sm mt-1">Essayez une autre catégorie</p>
+            <p className="text-slate-500 font-medium">Aucune information trouvee</p>
+            <p className="text-slate-400 text-sm mt-1">Essayez une autre thematique</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {articles.map((a, i) => {
-              const cat = getCategoryById(a.category)
+              const cat = getCategoryById(a.category_id)
               return (
                 <motion.div
                   key={a.id}
@@ -186,10 +242,10 @@ export default function HomePage() {
                       <div
                         className={cn(
                           'w-full h-full flex items-center justify-center text-6xl',
-                          cat?.color ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
+                          cat?.tabColor ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
                         )}
                       >
-                        {cat?.icon ?? '📰'}
+                        {cat?.tabIcon ?? '📰'}
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
