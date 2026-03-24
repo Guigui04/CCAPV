@@ -7,7 +7,7 @@ interface Profile {
   email: string
   first_name?: string
   last_name?: string
-  role: 'user' | 'admin'
+  role: 'user' | 'super_admin' | 'commune_admin'
   birth_date?: string
   created_at?: string
 }
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin = profile?.role === 'super_admin' || profile?.role === 'commune_admin'
 
   return (
     <AuthContext.Provider
