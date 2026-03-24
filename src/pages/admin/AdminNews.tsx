@@ -78,10 +78,10 @@ export default function AdminNews() {
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display font-bold text-2xl text-slate-900">
+        <h2 className="font-display font-bold text-xl lg:text-2xl text-slate-900">
           Articles ({total})
         </h2>
-        <button onClick={() => openModal(null)} className="btn-primary">
+        <button onClick={() => openModal(null)} className="btn-primary text-sm">
           + Nouvel article
         </button>
       </div>
@@ -91,83 +91,144 @@ export default function AdminNews() {
           <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-left">
-                <th className="px-4 py-3 text-slate-500 font-medium">Titre</th>
-                <th className="px-4 py-3 text-slate-500 font-medium">Categorie</th>
-                <th className="px-4 py-3 text-slate-500 font-medium">Statut</th>
-                <th className="px-4 py-3 text-slate-500 font-medium">Date</th>
-                <th className="px-4 py-3 text-slate-500 font-medium text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {articles.map((a) => {
-                const cat = getCategoryById(a.category_id)
-                return (
-                  <tr
-                    key={a.id}
-                    className="border-b border-slate-50 hover:bg-slate-50"
-                  >
-                    <td className="px-4 py-3 font-medium text-slate-900 max-w-xs truncate">
-                      {a.title}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="badge-blue">
-                        {cat?.tabIcon} {cat?.label ?? a.category_id}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() =>
-                          togglePublished(a.id, a.status).then(load)
-                        }
-                      >
-                        <span
-                          className={
-                            a.status === 'published' ? 'badge-green' : 'badge-gray'
+        <>
+          {/* Desktop table */}
+          <div className="hidden lg:block card overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-left">
+                  <th className="px-4 py-3 text-slate-500 font-medium">Titre</th>
+                  <th className="px-4 py-3 text-slate-500 font-medium">Categorie</th>
+                  <th className="px-4 py-3 text-slate-500 font-medium">Statut</th>
+                  <th className="px-4 py-3 text-slate-500 font-medium">Date</th>
+                  <th className="px-4 py-3 text-slate-500 font-medium text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {articles.map((a) => {
+                  const cat = getCategoryById(a.category_id)
+                  return (
+                    <tr
+                      key={a.id}
+                      className="border-b border-slate-50 hover:bg-slate-50"
+                    >
+                      <td className="px-4 py-3 font-medium text-slate-900 max-w-xs truncate">
+                        {a.title}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="badge-blue">
+                          {cat?.tabIcon} {cat?.label ?? a.category_id}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() =>
+                            togglePublished(a.id, a.status).then(load)
                           }
                         >
-                          {a.status === 'published' ? '✓ Publie' : '○ Brouillon'}
-                        </span>
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 text-slate-400">
+                          <span
+                            className={
+                              a.status === 'published' ? 'badge-green' : 'badge-gray'
+                            }
+                          >
+                            {a.status === 'published' ? '✓ Publie' : '○ Brouillon'}
+                          </span>
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {new Date(a.created_at).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => openModal(a)}
+                            className="btn-secondary btn-sm text-xs"
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('Supprimer cet article ?'))
+                                deleteNews(a.id).then(load)
+                            }}
+                            className="btn-danger btn-sm text-xs"
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {articles.length === 0 && (
+              <div className="text-center py-12 text-slate-400">
+                Aucun article
+              </div>
+            )}
+          </div>
+
+          {/* Mobile cards */}
+          <div className="lg:hidden space-y-3">
+            {articles.length === 0 && (
+              <div className="card p-12 text-center text-slate-400">
+                Aucun article
+              </div>
+            )}
+            {articles.map((a) => {
+              const cat = getCategoryById(a.category_id)
+              return (
+                <div key={a.id} className="card p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2 flex-1">
+                      {a.title}
+                    </h3>
+                    <button
+                      onClick={() => togglePublished(a.id, a.status).then(load)}
+                      className="shrink-0"
+                    >
+                      <span
+                        className={
+                          a.status === 'published' ? 'badge-green' : 'badge-gray'
+                        }
+                      >
+                        {a.status === 'published' ? '✓ Publie' : '○ Brouillon'}
+                      </span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <span className="badge-blue text-xs">
+                      {cat?.tabIcon} {cat?.label ?? a.category_id}
+                    </span>
+                    <span className="text-xs text-slate-400">
                       {new Date(a.created_at).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openModal(a)}
-                          className="btn-secondary btn-sm text-xs"
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('Supprimer cet article ?'))
-                              deleteNews(a.id).then(load)
-                          }}
-                          className="btn-danger btn-sm text-xs"
-                        >
-                          Supprimer
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          {articles.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
-              Aucun article
-            </div>
-          )}
-        </div>
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openModal(a)}
+                      className="btn-secondary btn-sm text-xs flex-1"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Supprimer cet article ?'))
+                          deleteNews(a.id).then(load)
+                      }}
+                      className="btn-danger btn-sm text-xs"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
       )}
 
       {/* Pagination */}
@@ -193,22 +254,22 @@ export default function AdminNews() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal - full screen on mobile, centered on desktop */}
       {modal !== false && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end lg:items-center justify-center lg:p-4">
+          <div className="bg-white w-full lg:rounded-2xl lg:shadow-xl lg:max-w-2xl max-h-[95vh] lg:max-h-[90vh] overflow-y-auto rounded-t-2xl">
+            <div className="flex items-center justify-between p-4 lg:p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
               <h2 className="font-display font-bold text-lg text-slate-900">
                 {modal?.id ? 'Modifier l\'article' : 'Nouvel article'}
               </h2>
               <button
                 onClick={() => setModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-xl"
+                className="text-slate-400 hover:text-slate-600 text-xl w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
+            <form onSubmit={handleSave} className="p-4 lg:p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Titre *
@@ -263,7 +324,7 @@ export default function AdminNews() {
                 </label>
                 <textarea
                   className="input-field resize-none"
-                  rows={8}
+                  rows={6}
                   value={form.content}
                   onChange={(e) =>
                     setForm((f: any) => ({ ...f, content: e.target.value }))
