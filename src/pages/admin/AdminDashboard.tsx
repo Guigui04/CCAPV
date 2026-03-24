@@ -58,24 +58,24 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <h2 className="font-display font-bold text-2xl text-slate-900 mb-8">
+      <h2 className="font-display font-bold text-xl lg:text-2xl text-slate-900 mb-6 lg:mb-8">
         Tableau de bord
       </h2>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-32 bg-slate-200 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {cards.map((c) => (
               <Link
                 key={c.label}
                 to={c.to}
-                className={`bg-gradient-to-br ${c.color} border rounded-2xl p-6 hover:shadow-md transition-shadow group`}
+                className={`bg-gradient-to-br ${c.color} border rounded-2xl p-5 lg:p-6 hover:shadow-md transition-shadow group`}
               >
                 <div className="text-2xl mb-3">{c.icon}</div>
                 <p className="text-3xl font-display font-bold text-slate-900">
