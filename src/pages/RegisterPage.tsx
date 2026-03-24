@@ -19,30 +19,41 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="card w-full max-w-md p-8">
-        <h1 className="font-display font-bold text-2xl text-blue-900 mb-1">Créer un compte</h1>
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-indigo-200">
+            <span className="text-white font-black text-xl">IJ</span>
+          </div>
+          <h1 className="text-3xl font-black text-slate-900">Créer un compte</h1>
+          <p className="text-slate-500 text-sm mt-1 text-center">Rejoins la communauté CCAPV</p>
+        </div>
+
         {success ? (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-4 text-sm mt-4">
-            <p className="font-semibold mb-1">✅ Inscription réussie !</p>
-            <p>Vérifiez votre boîte mail pour confirmer votre compte.</p>
-            <Link to="/login" className="text-blue-600 hover:underline font-medium block mt-3">→ Se connecter</Link>
+          <div className="bg-green-50 border border-green-200 text-green-700 rounded-2xl px-4 py-5 text-center">
+            <p className="font-black text-lg mb-1">✅ Inscription réussie !</p>
+            <p className="text-sm mb-3">Vérifie ta boîte mail pour confirmer ton compte.</p>
+            <Link to="/login" className="text-indigo-600 font-bold hover:underline">→ Se connecter</Link>
           </div>
         ) : (
           <>
-            {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm my-4">{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-                <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} required />
+            {error && <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl px-4 py-3 text-sm mb-4 text-center">{error}</div>}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200 flex items-center gap-3 px-4 py-3.5 shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                <span className="text-slate-400 text-lg">✉️</span>
+                <input type="email" placeholder="Email" className="flex-1 bg-transparent outline-none text-slate-800 placeholder-slate-400 text-base" value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Mot de passe</label>
-                <input type="password" className="input-field" minLength={6} value={password} onChange={e => setPassword(e.target.value)} required />
+              <div className="bg-white rounded-2xl border border-slate-200 flex items-center gap-3 px-4 py-3.5 shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                <span className="text-slate-400 text-lg">🔒</span>
+                <input type="password" placeholder="Mot de passe (6 caractères min)" className="flex-1 bg-transparent outline-none text-slate-800 placeholder-slate-400 text-base" minLength={6} value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
-              <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Inscription…' : 'Créer mon compte'}</button>
+              <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-base py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] disabled:opacity-60">
+                {loading ? 'Inscription…' : "Créer mon compte →"}
+              </button>
             </form>
-            <p className="text-sm text-slate-500 text-center mt-5">Déjà un compte ? <Link to="/login" className="text-blue-600 hover:underline font-medium">Se connecter</Link></p>
+            <p className="text-center text-sm text-slate-500 mt-6">
+              Déjà un compte ? <Link to="/login" className="text-indigo-600 font-bold hover:underline">Se connecter</Link>
+            </p>
           </>
         )}
       </div>
