@@ -1,6 +1,10 @@
 import { Routes, Route } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
+import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
+import ExplorerPage from './pages/ExplorerPage'
+import AlertesPage from './pages/AlertesPage'
+import ProfilPage from './pages/ProfilPage'
 import NewsDetailPage from './pages/NewsDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -11,10 +15,20 @@ import AdminFeedback from './pages/admin/AdminFeedback'
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      {/* Public pages with mobile layout */}
+      <Route path="/" element={<Layout><HomePage /></Layout>} />
+      <Route path="/explorer" element={<Layout><ExplorerPage /></Layout>} />
+      <Route path="/alertes" element={<Layout><AlertesPage /></Layout>} />
       <Route path="/news/:id" element={<NewsDetailPage />} />
+
+      {/* Auth pages — no layout wrapper */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+
+      {/* Protected profile page */}
+      <Route path="/profil" element={<ProtectedRoute><Layout><ProfilPage /></Layout></ProtectedRoute>} />
+
+      {/* Admin pages — require admin role */}
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/news" element={<ProtectedRoute requireAdmin><AdminNews /></ProtectedRoute>} />
       <Route path="/admin/feedback" element={<ProtectedRoute requireAdmin><AdminFeedback /></ProtectedRoute>} />

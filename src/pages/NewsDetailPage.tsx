@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { getNewsById, CATEGORIES } from '../lib/newsService'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Calendar, ExternalLink, Send, CheckCircle } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { getNewsById } from '../lib/newsService'
 import { submitFeedback } from '../lib/feedbackService'
+import { getCategoryById } from '../constants'
 import { useAuth } from '../context/AuthContext'
+import { formatDate, cn } from '../utils'
 
 export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [article, setArticle] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -13,51 +18,209 @@ export default function NewsDetailPage() {
   const [fbEmail, setFbEmail] = useState(user?.email ?? '')
   const [fbSent, setFbSent] = useState(false)
   const [fbLoading, setFbLoading] = useState(false)
+  const [fbError, setFbError] = useState('')
 
   useEffect(() => {
-    if (id) getNewsById(id).then(setArticle).finally(() => setLoading(false))
+    if (id) {
+      getNewsById(id)
+        .then(setArticle)
+        .catch(() => setArticle(null))
+        .finally(() => setLoading(false))
+    }
   }, [id])
 
   async function handleFeedback(e: React.FormEvent) {
-    e.preventDefault(); setFbLoading(true)
-    try { await submitFeedback({ news_id: id!, author_email: fbEmail, content: fbContent }); setFbSent(true) }
-    catch (err: any) { alert(err.message) }
-    finally { setFbLoading(false) }
+    e.preventDefault()
+    setFbLoading(true)
+    setFbError('')
+    try {
+      await submitFeedback({
+        news_id: id!,
+        author_email: fbEmail,
+        content: fbContent,
+      })
+      setFbSent(true)
+    } catch (err: any) {
+      setFbError(err.message || 'Erreur lors de l\'envoi')
+    } finally {
+      setFbLoading(false)
+    }
   }
 
-  const cat = article ? CATEGORIES.find(c => c.id === article.category) : null
+  const cat = article ? getCategoryById(article.category) : null
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center">
-          <Link to="/" className="font-display font-bold text-blue-900 text-lg">CC Alpes Provence Verdon</Link>
+      {/* Sticky header */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors text-slate-600"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <Link to="/" className="font-display font-bold text-slate-900 text-sm">
+            Info Jeunes
+          </Link>
         </div>
       </header>
-      <div className="max-w-3xl mx-auto px-4 py-10">
-        <Link to="/" className="text-blue-600 hover:underline text-sm font-medium mb-6 block">← Retour</Link>
-        {loading ? <div className="flex justify-center py-24"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div> : article ? (
-          <>
-            {article.image_url && <img src={article.image_url} alt={article.title} className="w-full h-64 object-cover rounded-2xl mb-8" />}
-            <div className="flex items-center gap-2 mb-4">
-              {cat && <span className="badge-blue">{cat.icon} {cat.label}</span>}
-              <span className="text-xs text-slate-400">{new Date(article.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        {loading ? (
+          <div className="flex justify-center py-24">
+            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : article ? (
+          <motion.article
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {/* Hero image */}
+            {article.image_url && (
+              <img
+                src={article.image_url}
+                alt={article.title}
+                className="w-full h-64 sm:h-80 object-cover rounded-3xl mb-8 shadow-sm"
+              />
+            )}
+
+            {/* Meta */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {cat && (
+                <span className={cn('badge-blue text-sm')}>
+                  {cat.icon} {cat.label}
+                </span>
+              )}
+              <span className="text-xs text-slate-400 flex items-center gap-1">
+                <Calendar size={12} />
+                {formatDate(article.created_at)}
+              </span>
             </div>
-            <h1 className="font-display font-extrabold text-3xl text-blue-900 mb-4">{article.title}</h1>
-            {article.excerpt && <p className="text-lg text-slate-600 border-l-4 border-blue-400 pl-4 mb-6">{article.excerpt}</p>}
-            {article.content && <div className="text-slate-700 leading-relaxed whitespace-pre-wrap mb-12">{article.content}</div>}
-            <div className="card p-6">
-              <h2 className="font-display font-bold text-lg text-blue-900 mb-4">💬 Laisser un commentaire</h2>
-              {fbSent ? <p className="text-green-600 font-medium">✅ Merci ! Votre commentaire est en attente de modération.</p> : (
-                <form onSubmit={handleFeedback} className="space-y-3">
-                  <input type="email" className="input-field" placeholder="Votre email" value={fbEmail} onChange={e => setFbEmail(e.target.value)} required />
-                  <textarea className="input-field resize-none" rows={4} placeholder="Votre commentaire…" value={fbContent} onChange={e => setFbContent(e.target.value)} required />
-                  <button type="submit" disabled={fbLoading} className="btn-primary">{fbLoading ? 'Envoi…' : 'Envoyer'}</button>
+
+            {/* Title */}
+            <h1 className="font-display font-extrabold text-3xl text-slate-900 mb-4 leading-tight">
+              {article.title}
+            </h1>
+
+            {/* Excerpt */}
+            {article.excerpt && (
+              <p className="text-lg text-slate-600 border-l-4 border-indigo-400 pl-4 mb-8 leading-relaxed">
+                {article.excerpt}
+              </p>
+            )}
+
+            {/* Content */}
+            {article.content && (
+              <div className="text-slate-700 leading-relaxed whitespace-pre-wrap text-base mb-12">
+                {article.content}
+              </div>
+            )}
+
+            {/* Links */}
+            {article.links && article.links.length > 0 && (
+              <div className="mb-12 space-y-2">
+                <h3 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider mb-3">
+                  Liens utiles
+                </h3>
+                {article.links.map((link: any, i: number) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all group"
+                  >
+                    <ExternalLink size={16} className="text-indigo-500 shrink-0" />
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">
+                      {link.label || link.url}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* Feedback form */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="font-display font-bold text-lg text-slate-900 mb-1">
+                💬 Laisser un commentaire
+              </h2>
+              <p className="text-sm text-slate-500 mb-5">
+                Ton retour nous aide à améliorer nos informations.
+              </p>
+
+              {fbSent ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-3 p-4 bg-green-50 rounded-2xl border border-green-100"
+                >
+                  <CheckCircle className="text-green-600 shrink-0" size={24} />
+                  <div>
+                    <p className="text-green-700 font-bold text-sm">Merci pour ton retour !</p>
+                    <p className="text-green-600 text-xs mt-0.5">
+                      Ton commentaire est en attente de modération.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
+                <form onSubmit={handleFeedback} className="space-y-4">
+                  <input
+                    type="email"
+                    className="input-field"
+                    placeholder="Ton email"
+                    value={fbEmail}
+                    onChange={(e) => setFbEmail(e.target.value)}
+                    required
+                  />
+                  <textarea
+                    className="input-field resize-none"
+                    rows={4}
+                    placeholder="Ton commentaire..."
+                    value={fbContent}
+                    onChange={(e) => setFbContent(e.target.value)}
+                    required
+                  />
+                  {fbError && (
+                    <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100">
+                      {fbError}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={fbLoading}
+                    className="btn-primary w-full"
+                  >
+                    {fbLoading ? (
+                      'Envoi en cours...'
+                    ) : (
+                      <>
+                        Envoyer <Send size={16} />
+                      </>
+                    )}
+                  </button>
                 </form>
               )}
             </div>
-          </>
-        ) : <p className="text-center text-red-600 py-12">Article introuvable</p>}
+          </motion.article>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-4xl mb-3">😕</p>
+            <h2 className="font-display font-bold text-xl text-slate-900 mb-2">
+              Article introuvable
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Cet article n'existe plus ou l'URL est incorrecte.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors"
+            >
+              <ArrowLeft size={16} />
+              Retour à l'accueil
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )
