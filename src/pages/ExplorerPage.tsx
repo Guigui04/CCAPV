@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom'
 import { Search, X, Calendar, ArrowRight, SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getPublishedNews } from '../lib/newsService'
-import { CATEGORIES, getCategoryById } from '../constants'
+import { TABS, getCategoryById } from '../constants'
 import { cn, formatDate } from '../utils'
 
 export default function ExplorerPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedTab, setSelectedTab] = useState<string | null>(null)
+  const [selectedSub, setSelectedSub] = useState<string | null>(null)
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
@@ -16,7 +17,8 @@ export default function ExplorerPage() {
   const doSearch = useCallback(() => {
     setLoading(true)
     getPublishedNews({
-      category: selectedCategory || undefined,
+      category: selectedSub || undefined,
+      tab: !selectedSub && selectedTab ? selectedTab : undefined,
       search: searchTerm || undefined,
       limit: 50,
     })
@@ -26,12 +28,14 @@ export default function ExplorerPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [searchTerm, selectedCategory])
+  }, [searchTerm, selectedTab, selectedSub])
 
   useEffect(() => {
     const timeout = setTimeout(doSearch, 300)
     return () => clearTimeout(timeout)
   }, [doSearch])
+
+  const activeTab = selectedTab ? TABS.find((t) => t.id === selectedTab) : null
 
   return (
     <div className="space-y-6 pb-8">
@@ -59,40 +63,71 @@ export default function ExplorerPage() {
         )}
       </div>
 
-      {/* Category chips */}
+      {/* Tab chips */}
       <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide -mx-4 px-4">
         <button
-          onClick={() => setSelectedCategory(null)}
+          onClick={() => {
+            setSelectedTab(null)
+            setSelectedSub(null)
+          }}
           className={cn(
             'px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0',
-            !selectedCategory
+            !selectedTab
               ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100'
               : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-200'
           )}
         >
           Tout
         </button>
-        {CATEGORIES.map((cat) => (
+        {TABS.map((tab) => (
           <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+            key={tab.id}
+            onClick={() => {
+              if (selectedTab === tab.id) {
+                setSelectedTab(null)
+                setSelectedSub(null)
+              } else {
+                setSelectedTab(tab.id)
+                setSelectedSub(null)
+              }
+            }}
             className={cn(
               'px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border shrink-0',
-              selectedCategory === cat.id
+              selectedTab === tab.id
                 ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100'
                 : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-200'
             )}
           >
-            {cat.icon} {cat.label}
+            {tab.icon} {tab.label}
           </button>
         ))}
       </div>
 
+      {/* Subcategory chips (when a tab is selected) */}
+      {activeTab && (
+        <div className="flex flex-wrap gap-2">
+          {activeTab.subcategories.map((sub) => (
+            <button
+              key={sub.id}
+              onClick={() => setSelectedSub(selectedSub === sub.id ? null : sub.id)}
+              className={cn(
+                'px-3.5 py-2 rounded-xl text-xs font-bold transition-all border',
+                selectedSub === sub.id
+                  ? 'bg-indigo-100 border-indigo-300 text-indigo-700'
+                  : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-600'
+              )}
+            >
+              {sub.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Results count */}
       {!loading && (
         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-          {total} résultat{total !== 1 ? 's' : ''}
-          {searchTerm && <> pour « {searchTerm} »</>}
+          {total} resultat{total !== 1 ? 's' : ''}
+          {searchTerm && <> pour &laquo; {searchTerm} &raquo;</>}
         </p>
       )}
 
@@ -107,7 +142,7 @@ export default function ExplorerPage() {
             </div>
           ) : results.length > 0 ? (
             results.map((a, i) => {
-              const cat = getCategoryById(a.category)
+              const cat = getCategoryById(a.category_id)
               return (
                 <motion.div
                   key={a.id}
@@ -131,10 +166,10 @@ export default function ExplorerPage() {
                       <div
                         className={cn(
                           'w-full h-full flex items-center justify-center text-6xl',
-                          cat?.color ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
+                          cat?.tabColor ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
                         )}
                       >
-                        {cat?.icon ?? '📰'}
+                        {cat?.tabIcon ?? '📰'}
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -167,10 +202,10 @@ export default function ExplorerPage() {
                 <SlidersHorizontal size={32} />
               </div>
               <h4 className="text-xl font-display font-extrabold text-slate-900 mb-1">
-                Aucun résultat
+                Aucun resultat
               </h4>
               <p className="text-slate-500 font-medium">
-                Essaie d'autres mots-clés ou catégories.
+                Essaie d'autres mots-cles ou categories.
               </p>
             </motion.div>
           )}

@@ -1,12 +1,15 @@
 import { supabase } from './supabase'
+import { getTabById } from '../constants'
 
 export async function getPublishedNews({
   category,
+  tab,
   page = 1,
   limit = 12,
   search,
 }: {
   category?: string
+  tab?: string
   page?: number
   limit?: number
   search?: string
@@ -14,11 +17,19 @@ export async function getPublishedNews({
   let query = supabase
     .from('news')
     .select('*', { count: 'exact' })
-    .eq('published', true)
+    .eq('status', 'published')
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
 
-  if (category) query = query.eq('category', category)
+  if (category) {
+    query = query.eq('category_id', category)
+  } else if (tab) {
+    const tabObj = getTabById(tab)
+    if (tabObj) {
+      const subIds = tabObj.subcategories.map((s) => s.id)
+      query = query.in('category_id', subIds)
+    }
+  }
   if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`)
 
   const { data, error, count } = await query
@@ -68,6 +79,7 @@ export async function deleteNews(id: string) {
   if (error) throw error
 }
 
-export async function togglePublished(id: string, published: boolean) {
-  return updateNews(id, { published })
+export async function togglePublished(id: string, currentStatus: string) {
+  const newStatus = currentStatus === 'published' ? 'draft' : 'published'
+  return updateNews(id, { status: newStatus })
 }

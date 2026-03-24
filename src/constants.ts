@@ -1,22 +1,119 @@
-export const CATEGORIES = [
-  { id: 'sante',       label: 'Santé',       icon: '🏥', lucideIcon: 'HeartPulse', color: 'bg-rose-500' },
-  { id: 'activites',   label: 'Activités',   icon: '🎯', lucideIcon: 'Gamepad2',   color: 'bg-orange-500' },
-  { id: 'sport',       label: 'Sport',       icon: '⚽', lucideIcon: 'Trophy',     color: 'bg-emerald-500' },
-  { id: 'culture',     label: 'Culture',     icon: '🎭', lucideIcon: 'Palette',    color: 'bg-indigo-500' },
-  { id: 'emploi',      label: 'Emploi',      icon: '💼', lucideIcon: 'Briefcase',  color: 'bg-blue-500' },
-  { id: 'orientation', label: 'Orientation', icon: '🧭', lucideIcon: 'Compass',    color: 'bg-violet-500' },
-  { id: 'aides',       label: 'Aides',       icon: '🤝', lucideIcon: 'HandHelping',color: 'bg-amber-500' },
-  { id: 'mobilite',    label: 'Mobilité',    icon: '🚌', lucideIcon: 'Bus',        color: 'bg-sky-500' },
-  { id: 'logement',    label: 'Logement',    icon: '🏠', lucideIcon: 'Home',       color: 'bg-teal-500' },
-  { id: 'prevention',  label: 'Prévention',  icon: '🛡️', lucideIcon: 'ShieldAlert',color: 'bg-red-500' },
-  { id: 'citoyennete', label: 'Citoyenneté', icon: '🗳️', lucideIcon: 'Users',      color: 'bg-purple-500' },
-  { id: 'evenements',  label: 'Événements',  icon: '📅', lucideIcon: 'Calendar',   color: 'bg-fuchsia-500' },
+// ── Onglets principaux avec leurs sous-catégories ──────────────────────
+
+export const TABS = [
+  {
+    id: 'orientation',
+    label: 'Orientation / Formation',
+    icon: '🎓',
+    lucideIcon: 'GraduationCap',
+    color: 'bg-violet-500',
+    subcategories: [
+      { id: 'parcours-scolaires', label: 'Parcours scolaires' },
+      { id: 'reconversion', label: 'Reconversion' },
+      { id: 'alternance', label: 'Alternance' },
+    ],
+  },
+  {
+    id: 'emploi',
+    label: 'Emploi',
+    icon: '💼',
+    lucideIcon: 'Briefcase',
+    color: 'bg-blue-500',
+    subcategories: [
+      { id: 'recherche-job', label: 'Recherche de job' },
+      { id: 'cv', label: 'CV' },
+      { id: 'stages', label: 'Stages' },
+      { id: 'insertion', label: "Dispositifs d'insertion" },
+    ],
+  },
+  {
+    id: 'vie-quotidienne',
+    label: 'Vie quotidienne',
+    icon: '🏠',
+    lucideIcon: 'Home',
+    color: 'bg-teal-500',
+    subcategories: [
+      { id: 'logement', label: 'Logement' },
+      { id: 'budget', label: 'Budget' },
+      { id: 'transport', label: 'Transport' },
+    ],
+  },
+  {
+    id: 'sante',
+    label: 'Santé',
+    icon: '🏥',
+    lucideIcon: 'HeartPulse',
+    color: 'bg-rose-500',
+    subcategories: [
+      { id: 'acces-soins', label: 'Accès aux soins' },
+      { id: 'prevention', label: 'Prévention' },
+      { id: 'bien-etre', label: 'Bien-être' },
+    ],
+  },
+  {
+    id: 'mobilite',
+    label: 'Mobilité internationale',
+    icon: '✈️',
+    lucideIcon: 'Plane',
+    color: 'bg-sky-500',
+    subcategories: [
+      { id: 'erasmus', label: 'Erasmus+' },
+      { id: 'volontariat', label: 'Volontariat' },
+      { id: 'sejours-etranger', label: "Séjours à l'étranger" },
+    ],
+  },
+  {
+    id: 'engagement',
+    label: 'Engagement',
+    icon: '🤝',
+    lucideIcon: 'HandHeart',
+    color: 'bg-amber-500',
+    subcategories: [
+      { id: 'benevolat', label: 'Bénévolat' },
+      { id: 'service-civique', label: 'Service civique' },
+      { id: 'projets-citoyens', label: 'Projets citoyens' },
+    ],
+  },
+  {
+    id: 'droits',
+    label: 'Accès aux droits',
+    icon: '⚖️',
+    lucideIcon: 'Scale',
+    color: 'bg-purple-500',
+    subcategories: [
+      { id: 'aides-financieres', label: 'Aides financières' },
+      { id: 'dispositifs-publics', label: 'Dispositifs publics' },
+    ],
+  },
 ] as const
 
-export type CategoryId = typeof CATEGORIES[number]['id']
+export type TabId = typeof TABS[number]['id']
+export type SubcategoryId = typeof TABS[number]['subcategories'][number]['id']
 
+// Flat list of all subcategories (for dropdowns, filters, etc.)
+export const ALL_SUBCATEGORIES = TABS.flatMap((tab) =>
+  tab.subcategories.map((sub) => ({
+    ...sub,
+    tabId: tab.id,
+    tabLabel: tab.label,
+    tabIcon: tab.icon,
+    tabColor: tab.color,
+  }))
+)
+
+/** Find a subcategory by its id, returns subcategory + parent tab info */
 export function getCategoryById(id: string) {
-  return CATEGORIES.find(c => c.id === id) ?? null
+  return ALL_SUBCATEGORIES.find((s) => s.id === id) ?? null
+}
+
+/** Find the parent tab for a subcategory id */
+export function getTabBySubcategoryId(id: string) {
+  return TABS.find((tab) => tab.subcategories.some((s) => s.id === id)) ?? null
+}
+
+/** Find a tab by its own id */
+export function getTabById(id: string) {
+  return TABS.find((t) => t.id === id) ?? null
 }
 
 export const REACTION_LABELS: Record<string, string> = {

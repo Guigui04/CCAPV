@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, ExternalLink, Send, CheckCircle } from 'lucide-rea
 import { motion } from 'framer-motion'
 import { getNewsById } from '../lib/newsService'
 import { submitFeedback } from '../lib/feedbackService'
-import { getCategoryById } from '../constants'
+import { getCategoryById, getTabBySubcategoryId } from '../constants'
 import { useAuth } from '../context/AuthContext'
 import { formatDate, cn } from '../utils'
 
@@ -47,7 +47,8 @@ export default function NewsDetailPage() {
     }
   }
 
-  const cat = article ? getCategoryById(article.category) : null
+  const cat = article ? getCategoryById(article.category_id) : null
+  const parentTab = article ? getTabBySubcategoryId(article.category_id) : null
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -87,9 +88,14 @@ export default function NewsDetailPage() {
 
             {/* Meta */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {parentTab && (
+                <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full text-white', parentTab.color)}>
+                  {parentTab.icon} {parentTab.label}
+                </span>
+              )}
               {cat && (
                 <span className={cn('badge-blue text-sm')}>
-                  {cat.icon} {cat.label}
+                  {cat.label}
                 </span>
               )}
               <span className="text-xs text-slate-400 flex items-center gap-1">
@@ -103,10 +109,10 @@ export default function NewsDetailPage() {
               {article.title}
             </h1>
 
-            {/* Excerpt */}
-            {article.excerpt && (
+            {/* Summary */}
+            {article.summary && (
               <p className="text-lg text-slate-600 border-l-4 border-indigo-400 pl-4 mb-8 leading-relaxed">
-                {article.excerpt}
+                {article.summary}
               </p>
             )}
 
