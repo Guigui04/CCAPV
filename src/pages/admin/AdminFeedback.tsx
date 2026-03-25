@@ -4,6 +4,7 @@ import {
   updateFeedbackStatus,
   deleteFeedback,
 } from '../../lib/feedbackService'
+import { supabase } from '../../lib/supabase'
 import { REACTION_LABELS, FEEDBACK_STATUS_LABELS } from '../../constants'
 import { User } from 'lucide-react'
 import AdminLayout from '../../components/AdminLayout'
@@ -11,6 +12,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 
 export default function AdminFeedback() {
   const [feedbacks, setFeedbacks] = useState<any[]>([])
+  const [authors, setAuthors] = useState<Record<string, { first_name?: string; last_name?: string }>>({})
   const [total, setTotal] = useState(0)
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
@@ -21,9 +23,24 @@ export default function AdminFeedback() {
   const load = useCallback(() => {
     setLoading(true)
     getFeedbacks({ status: status || undefined, page, limit: LIMIT })
-      .then(({ data, count }) => {
+      .then(async ({ data, count }) => {
         setFeedbacks(data)
         setTotal(count)
+        // Fetch author profiles
+        const userIds = [...new Set(data.map((f: any) => f.user_id).filter(Boolean))]
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .in('id', userIds)
+          if (profiles) {
+            const map: Record<string, { first_name?: string; last_name?: string }> = {}
+            for (const p of profiles) {
+              map[p.id] = { first_name: p.first_name, last_name: p.last_name }
+            }
+            setAuthors(map)
+          }
+        }
       })
       .finally(() => setLoading(false))
   }, [status, page])
@@ -33,6 +50,14 @@ export default function AdminFeedback() {
   }, [load])
 
   const totalPages = Math.ceil(total / LIMIT)
+
+  function getAuthorName(userId?: string) {
+    if (!userId) return 'Utilisateur anonyme'
+    const a = authors[userId]
+    if (!a) return 'Utilisateur'
+    const name = `${a.first_name ?? ''} ${a.last_name ?? ''}`.trim()
+    return name || 'Utilisateur'
+  }
 
   function statusBadge(s: string) {
     if (s === 'processed') return <span className="badge-green">Traité</span>
@@ -110,9 +135,7 @@ export default function AdminFeedback() {
                   <User size={12} className="text-indigo-500" />
                 </div>
                 <span className="text-sm font-medium text-slate-600">
-                  {f.profiles?.first_name || f.profiles?.last_name
-                    ? `${f.profiles.first_name ?? ''} ${f.profiles.last_name ?? ''}`.trim()
-                    : 'Utilisateur anonyme'}
+                  {getAuthorName(f.user_id)}
                 </span>
               </div>
               {f.comment && (
