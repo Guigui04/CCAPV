@@ -10,6 +10,7 @@ interface Profile {
   role: 'user' | 'super_admin' | 'commune_admin'
   commune_id?: string
   birth_date?: string
+  interests?: string[]
   created_at?: string
 }
 
@@ -24,7 +25,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   changePassword: (newPassword: string) => Promise<void>
-  updateProfile: (fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date' | 'commune_id'>>) => Promise<void>
+  updateProfile: (fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date' | 'commune_id' | 'interests'>>) => Promise<void>
   deleteAccount: () => Promise<void>
 }
 
@@ -126,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
-  async function updateProfile(fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date' | 'commune_id'>>) {
+  async function updateProfile(fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date' | 'commune_id' | 'interests'>>) {
     if (!user) throw new Error('Non connecté')
     const { error } = await supabase
       .from('profiles')

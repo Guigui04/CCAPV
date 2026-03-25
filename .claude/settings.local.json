@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E '\\\\.\\(ts|tsx|sql|json\\)$')",
+      "mcp__9f3e2f59-0ff0-4d83-8838-5e551f49dfe0__list_projects",
+      "mcp__9f3e2f59-0ff0-4d83-8838-5e551f49dfe0__execute_sql",
+      "Bash(where gh:*)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "mcp__a7f26719-394c-4511-92fb-fc265761c40b__get_runtime_logs",
+      "mcp__9f3e2f59-0ff0-4d83-8838-5e551f49dfe0__get_publishable_keys",
+      "mcp__9f3e2f59-0ff0-4d83-8838-5e551f49dfe0__get_project_url",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://nxoznyerllishnghkljn.supabase.co/rest/v1/news?status=eq.published&select=id,title,category_id&limit=3\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54b3pueWVybGxpc2huZ2hrbGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjMxNTUsImV4cCI6MjA4OTgzOTE1NX0.7GytGW8ixWk0JatuaZwdx5laGLaPAFjniIkWwVdv-ek\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54b3pueWVybGxpc2huZ2hrbGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjMxNTUsImV4cCI6MjA4OTgzOTE1NX0.7GytGW8ixWk0JatuaZwdx5laGLaPAFjniIkWwVdv-ek\")",
+      "Bash(curl -s \"https://nxoznyerllishnghkljn.supabase.co/rest/v1/news?status=eq.published&select=id,title,category_id&limit=3\" -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54b3pueWVybGxpc2huZ2hrbGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjMxNTUsImV4cCI6MjA4OTgzOTE1NX0.7GytGW8ixWk0JatuaZwdx5laGLaPAFjniIkWwVdv-ek' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54b3pueWVybGxpc2huZ2hrbGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjMxNTUsImV4cCI6MjA4OTgzOTE1NX0.7GytGW8ixWk0JatuaZwdx5laGLaPAFjniIkWwVdv-ek')",
+      "mcp__a7f26719-394c-4511-92fb-fc265761c40b__web_fetch_vercel_url",
+      "Bash(curl -s https://ccapv.vercel.app/assets/index-DCBfdRrt.js)",
+      "Bash(curl -s \"https://nxoznyerllishnghkljn.supabase.co/rest/v1/profiles?id=eq.42afaa8b-bec1-4601-8144-4d5efe47c77d&select=*\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54b3pueWVybGxpc2huZ2hrbGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjMxNTUsImV4cCI6MjA4OTgzOTE1NX0.7GytGW8ixWk0JatuaZwdx5laGLaPAFjniIkWwVdv-ek\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54b3pueWVybGxpc2huZ2hrbGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjMxNTUsImV4cCI6MjA4OTgzOTE1NX0.7GytGW8ixWk0JatuaZwdx5laGLaPAFjniIkWwVdv-ek\")",
+      "Bash(curl -s -X POST \"https://nxoznyerllishnghkljn.supabase.co/auth/v1/signup\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54b3pueWVybGxpc2huZ2hrbGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNjMxNTUsImV4cCI6MjA4OTgzOTE1NX0.7GytGW8ixWk0JatuaZwdx5laGLaPAFjniIkWwVdv-ek\" -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"admin@ij.fr\"\",\"\"password\"\":\"\"admin123\"\",\"\"data\"\":{\"\"first_name\"\":\"\"Admin\"\",\"\"last_name\"\":\"\"IJ\"\"}}')",
+      "Bash(npm run:*)",
+      "Bash(where gh.exe)",
+      "mcp__9f3e2f59-0ff0-4d83-8838-5e551f49dfe0__list_tables",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(gh pr:*)",
+      "Bash(ls \"/c/Program Files \\(x86\\)/GitHub CLI/gh.exe\")",
+      "Read(//c/Users/guill/Documents/CCAPV/.claude/worktrees/hardcore-elion/$LOCALAPPDATA/Programs/GitHub CLI/**)",
+      "Bash(git push:*)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f''''PR #{data[0][number]}: {data[0][title]} - {data[0][state]}''''\\) if data else print\\(''''No open PR''''\\)\")",
+      "mcp__9f3e2f59-0ff0-4d83-8838-5e551f49dfe0__apply_migration",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f''''PR #{data[0][\"\"number\"\"]}: {data[0][\"\"title\"\"]}''''\\) if data else print\\(''''No open PR''''\\)\")",
+      "Bash(git fetch:*)",
+      "Bash(git rebase:*)",
+      "mcp__a7f26719-394c-4511-92fb-fc265761c40b__deploy_to_vercel",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r 'create table' /c/Users/guill/Documents/CCAPV/.claude/worktrees/hardcore-elion --include=*.sql --include=*.md --include=*.txt)",
+      "Bash(grep -r \"notifications\\\\|user_notification_reads\" /c/Users/guill/Documents/CCAPV/.claude/worktrees/hardcore-elion/src --include=*.ts --include=*.tsx)"
+    ]
+  }
+}

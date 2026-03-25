@@ -25,10 +25,12 @@ import {
 import { cn, formatDate } from '../utils'
 import { TABS } from '../constants'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { useToast } from '../components/Toast'
 
 export default function ProfilPage() {
   const { user, profile, isAdmin, logout, updateProfile, changePassword, deleteAccount } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
 
   // Edit personal info
   const [editing, setEditing] = useState(false)
@@ -36,7 +38,6 @@ export default function ProfilPage() {
   const [lastName, setLastName] = useState(profile?.last_name ?? '')
   const [birthDate, setBirthDate] = useState(profile?.birth_date ?? '')
   const [saving, setSaving] = useState(false)
-  const [saveMsg, setSaveMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
   // Commune
   const [communes, setCommunes] = useState<{ id: string; name: string }[]>([])
@@ -52,8 +53,7 @@ export default function ProfilPage() {
   const [pwdMsg, setPwdMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
   // Interests
-  const [interests, setInterests] = useState<string[]>([])
-  const [savingInterests, setSavingInterests] = useState(false)
+  const [interests, setInterests] = useState<string[]>(profile?.interests ?? [])
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -75,6 +75,7 @@ export default function ProfilPage() {
     setFirstName(profile?.first_name ?? '')
     setLastName(profile?.last_name ?? '')
     setBirthDate(profile?.birth_date ?? '')
+    setInterests(profile?.interests ?? [])
   }, [profile])
 
   async function handleLogout() {
@@ -86,13 +87,11 @@ export default function ProfilPage() {
     setFirstName(profile?.first_name ?? '')
     setLastName(profile?.last_name ?? '')
     setBirthDate(profile?.birth_date ?? '')
-    setSaveMsg(null)
     setEditing(true)
   }
 
   async function handleSave() {
     setSaving(true)
-    setSaveMsg(null)
     try {
       await updateProfile({
         first_name: firstName.trim() || undefined,
@@ -100,10 +99,9 @@ export default function ProfilPage() {
         birth_date: birthDate || undefined,
       })
       setEditing(false)
-      setSaveMsg({ type: 'ok', text: 'Profil mis à jour' })
-      setTimeout(() => setSaveMsg(null), 3000)
+      toast.success('Profil mis à jour')
     } catch (err: any) {
-      setSaveMsg({ type: 'err', text: err.message || 'Erreur' })
+      toast.error(err.message || 'Erreur lors de la sauvegarde')
     } finally {
       setSaving(false)
     }
@@ -135,11 +133,10 @@ export default function ProfilPage() {
     setSavingPwd(true)
     try {
       await changePassword(newPwd)
-      setPwdMsg({ type: 'ok', text: 'Mot de passe modifié' })
+      toast.success('Mot de passe modifié')
       setNewPwd('')
       setConfirmPwd('')
       setShowPwd(false)
-      setTimeout(() => setPwdMsg(null), 3000)
     } catch (err: any) {
       setPwdMsg({ type: 'err', text: err.message || 'Erreur' })
     } finally {
@@ -147,10 +144,17 @@ export default function ProfilPage() {
     }
   }
 
-  function toggleInterest(tabId: string) {
-    setInterests((prev) =>
-      prev.includes(tabId) ? prev.filter((i) => i !== tabId) : [...prev, tabId]
-    )
+  async function toggleInterest(tabId: string) {
+    const next = interests.includes(tabId)
+      ? interests.filter((i) => i !== tabId)
+      : [...interests, tabId]
+    setInterests(next)
+    try {
+      await updateProfile({ interests: next })
+    } catch {
+      setInterests(interests) // revert
+      toast.error('Erreur lors de la sauvegarde')
+    }
   }
 
   async function handleDeleteAccount() {
@@ -236,17 +240,6 @@ export default function ProfilPage() {
           )}
         </div>
 
-        {saveMsg && (
-          <div
-            className={cn(
-              'mb-3 p-2.5 rounded-xl text-xs font-medium text-center',
-              saveMsg.type === 'ok' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
-            )}
-          >
-            {saveMsg.text}
-          </div>
-        )}
-
         <div className="space-y-4">
           <InfoRow icon={Mail} label="Email" value={user.email ?? 'Non renseigné'} />
           {editing ? (
@@ -327,9 +320,11 @@ export default function ProfilPage() {
             )
           })}
         </div>
-        <p className="text-[10px] text-slate-300 mt-3">
-          Bientôt : les alertes et le fil d'actu seront filtrés selon tes centres d'intérêt
-        </p>
+        {interests.length > 0 && (
+          <p className="text-[10px] text-indigo-400 mt-3 font-medium">
+            {interests.length} thématique{interests.length > 1 ? 's' : ''} sélectionnée{interests.length > 1 ? 's' : ''}
+          </p>
+        )}
       </Section>
 
       {/* Section: Sécurité */}

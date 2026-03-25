@@ -10,6 +10,7 @@ import { TABS, getCategoryById } from '../../constants'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import { useToast } from '../../components/Toast'
 
 const EMPTY = {
   title: '',
@@ -21,6 +22,7 @@ const EMPTY = {
 }
 
 export default function AdminNews() {
+  const toast = useToast()
   const [articles, setArticles] = useState<any[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -55,11 +57,11 @@ export default function AdminNews() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!form.title.trim()) {
-      alert('Le titre est obligatoire')
+      toast.warning('Le titre est obligatoire')
       return
     }
     if (!form.content.trim()) {
-      alert('Le contenu est obligatoire')
+      toast.warning('Le contenu est obligatoire')
       return
     }
     setSaving(true)
@@ -80,7 +82,7 @@ export default function AdminNews() {
       setModal(false)
       load()
     } catch (err: any) {
-      alert(err.message)
+      toast.error(err.message || 'Erreur lors de la sauvegarde')
     } finally {
       setSaving(false)
     }
@@ -90,11 +92,11 @@ export default function AdminNews() {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      alert('Seules les images sont acceptees')
+      toast.warning('Seules les images sont acceptées')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image trop lourde (max 5 Mo)')
+      toast.warning('Image trop lourde (max 5 Mo)')
       return
     }
     setUploading(true)
@@ -106,7 +108,7 @@ export default function AdminNews() {
       const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
       setForm((f: any) => ({ ...f, image_url: urlData.publicUrl }))
     } catch (err: any) {
-      alert(err.message || "Erreur lors de l'upload")
+      toast.error(err.message || "Erreur lors de l'upload")
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -255,10 +257,7 @@ export default function AdminNews() {
                       Modifier
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm('Supprimer cet article ?'))
-                          deleteNews(a.id).then(load)
-                      }}
+                      onClick={() => setDeleteId(a.id)}
                       className="btn-danger btn-sm text-xs"
                     >
                       Supprimer
