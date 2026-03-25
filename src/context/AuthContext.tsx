@@ -23,7 +23,9 @@ interface AuthContextType {
   logout: () => Promise<void>
   loginWithGoogle: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
-  updateProfile: (fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date'>>) => Promise<void>
+  changePassword: (newPassword: string) => Promise<void>
+  updateProfile: (fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date' | 'commune_id'>>) => Promise<void>
+  deleteAccount: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -119,7 +121,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
-  async function updateProfile(fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date'>>) {
+  async function changePassword(newPassword: string) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
+  async function updateProfile(fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date' | 'commune_id'>>) {
     if (!user) throw new Error('Non connecté')
     const { error } = await supabase
       .from('profiles')
@@ -129,11 +136,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchProfile(user.id)
   }
 
+  async function deleteAccount() {
+    if (!user) throw new Error('Non connecté')
+    // Delete profile data, then sign out (full deletion requires admin/edge function)
+    await supabase.from('feedback').delete().eq('user_id', user.id)
+    await supabase.from('user_notification_reads').delete().eq('user_id', user.id)
+    await supabase.from('profiles').update({ is_active: false, first_name: null, last_name: null, birth_date: null }).eq('id', user.id)
+    await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
+  }
+
   const isAdmin = profile?.role === 'super_admin' || profile?.role === 'commune_admin'
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, isAdmin, login, register, logout, loginWithGoogle, resetPassword, updateProfile }}
+      value={{ user, profile, loading, isAdmin, login, register, logout, loginWithGoogle, resetPassword, changePassword, updateProfile, deleteAccount }}
     >
       {children}
     </AuthContext.Provider>
