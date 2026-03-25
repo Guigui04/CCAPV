@@ -5,6 +5,7 @@ import {
   deleteFeedback,
 } from '../../lib/feedbackService'
 import { REACTION_LABELS, FEEDBACK_STATUS_LABELS } from '../../constants'
+import { User } from 'lucide-react'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
 
@@ -103,8 +104,19 @@ export default function AdminFeedback() {
                   {new Date(f.created_at).toLocaleDateString('fr-FR')}
                 </span>
               </div>
+              {/* Auteur */}
+              <div className="flex items-center gap-2 mt-2 mb-1">
+                <div className="w-6 h-6 bg-indigo-50 rounded-full flex items-center justify-center">
+                  <User size={12} className="text-indigo-500" />
+                </div>
+                <span className="text-sm font-medium text-slate-600">
+                  {f.profiles?.first_name || f.profiles?.last_name
+                    ? `${f.profiles.first_name ?? ''} ${f.profiles.last_name ?? ''}`.trim()
+                    : 'Utilisateur anonyme'}
+                </span>
+              </div>
               {f.comment && (
-                <p className="text-slate-700 text-sm leading-relaxed">{f.comment}</p>
+                <p className="text-slate-700 text-sm leading-relaxed mt-1">{f.comment}</p>
               )}
               <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
                 {f.status === 'new' && (

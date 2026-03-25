@@ -7,7 +7,7 @@ export async function getFeedbacks({
 }: { status?: string; page?: number; limit?: number } = {}) {
   let query = supabase
     .from('feedback')
-    .select('*, news(title)', { count: 'exact' })
+    .select('*, news(title), profiles:user_id(first_name, last_name)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
 
