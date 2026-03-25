@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Trash2, Pencil, X, Send, Megaphone, Link as LinkIcon } from 'lucide-react'
+import { Plus, Trash2, Pencil, X, Send, Megaphone, Info, Calendar, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   getAllNotifications,
@@ -7,8 +7,17 @@ import {
   updateNotification,
   deleteNotification,
 } from '../../lib/notificationService'
-import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
+
+const ALERT_TYPES = [
+  { value: 'info', label: 'Info', icon: Info, color: 'bg-blue-50 text-blue-600 border-blue-200', badge: 'badge-blue', iconBg: 'bg-blue-50 text-blue-500' },
+  { value: 'event', label: 'Événement', icon: Calendar, color: 'bg-emerald-50 text-emerald-600 border-emerald-200', badge: 'badge-green', iconBg: 'bg-emerald-50 text-emerald-500' },
+  { value: 'important', label: 'Important', icon: AlertTriangle, color: 'bg-red-50 text-red-600 border-red-200', badge: 'badge-yellow', iconBg: 'bg-amber-50 text-amber-500' },
+] as const
+
+function getAlertType(type: string) {
+  return ALERT_TYPES.find((t) => t.value === type) ?? ALERT_TYPES[0]
+}
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
 
@@ -25,12 +34,9 @@ export default function AdminAlerts() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [newsId, setNewsId] = useState('')
+  const [alertType, setAlertType] = useState('info')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-
-  // Articles list for linking
-  const [articles, setArticles] = useState<any[]>([])
 
   const LIMIT = 20
 
@@ -48,24 +54,11 @@ export default function AdminAlerts() {
     load()
   }, [load])
 
-  // Load articles for the dropdown
-  useEffect(() => {
-    supabase
-      .from('news')
-      .select('id, title')
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-      .limit(100)
-      .then(({ data }) => {
-        if (data) setArticles(data)
-      })
-  }, [])
-
   function openCreate() {
     setEditingId(null)
     setTitle('')
     setBody('')
-    setNewsId('')
+    setAlertType('info')
     setFormError('')
     setShowForm(true)
   }
@@ -74,7 +67,7 @@ export default function AdminAlerts() {
     setEditingId(n.id)
     setTitle(n.title)
     setBody(n.body)
-    setNewsId(n.news_id || '')
+    setAlertType(n.type || 'info')
     setFormError('')
     setShowForm(true)
   }
@@ -102,13 +95,13 @@ export default function AdminAlerts() {
         await updateNotification(editingId, {
           title: title.trim(),
           body: body.trim(),
-          news_id: newsId || null,
+          type: alertType,
         })
       } else {
         await createNotification({
           title: title.trim(),
           body: body.trim(),
-          news_id: newsId || undefined,
+          type: alertType,
           sent_by: user?.id,
         })
       }
@@ -189,24 +182,32 @@ export default function AdminAlerts() {
                   />
                 </div>
 
-                {/* Link to article */}
+                {/* Alert type */}
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
-                    <LinkIcon size={12} className="inline mr-1" />
-                    Lier à un article (optionnel)
+                    Type d'alerte
                   </label>
-                  <select
-                    value={newsId}
-                    onChange={(e) => setNewsId(e.target.value)}
-                    className="input-field"
-                  >
-                    <option value="">Aucun article lié</option>
-                    {articles.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.title}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-3 gap-2">
+                    {ALERT_TYPES.map((t) => {
+                      const Icon = t.icon
+                      const selected = alertType === t.value
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setAlertType(t.value)}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                            selected
+                              ? `${t.color} border-current font-bold shadow-sm`
+                              : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                          }`}
+                        >
+                          <Icon size={20} />
+                          <span className="text-xs font-semibold">{t.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {formError && (
@@ -254,14 +255,20 @@ export default function AdminAlerts() {
               </button>
             </div>
           ) : (
-            notifications.map((n) => (
+            notifications.map((n) => {
+              const at = getAlertType(n.type)
+              const TypeIcon = at.icon
+              return (
               <div key={n.id} className="card p-5">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
-                    <Megaphone size={18} className="text-indigo-500" />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${at.iconBg}`}>
+                    <TypeIcon size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-900 text-sm">{n.title}</h4>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-slate-900 text-sm">{n.title}</h4>
+                      <span className={`${at.badge} text-[10px]`}>{at.label}</span>
+                    </div>
                     <p className="text-slate-600 text-sm mt-1 line-clamp-2">{n.body}</p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
                       <span>
@@ -275,11 +282,6 @@ export default function AdminAlerts() {
                             })
                           : 'Non envoyée'}
                       </span>
-                      {n.news_id && (
-                        <span className="badge-blue text-[10px]">
-                          Article lié
-                        </span>
-                      )}
                       {!n.commune_id && (
                         <span className="badge-green text-[10px]">
                           Globale
@@ -303,7 +305,8 @@ export default function AdminAlerts() {
                   </button>
                 </div>
               </div>
-            ))
+              )
+            })
           )}
         </div>
       )}

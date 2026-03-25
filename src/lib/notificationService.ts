@@ -65,7 +65,7 @@ export async function getAllNotifications({
 export async function createNotification(payload: {
   title: string
   body: string
-  news_id?: string
+  type?: string
   commune_id?: string
   sent_by?: string
 }) {
