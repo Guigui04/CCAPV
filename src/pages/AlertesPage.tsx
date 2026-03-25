@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, ArrowRight, BellRing, Check, Megaphone } from 'lucide-react'
+import { Bell, ArrowRight, BellRing, Check, Info, Calendar, AlertTriangle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -10,6 +10,16 @@ import {
   markAllNotificationsRead,
 } from '../lib/notificationService'
 import { cn, formatRelativeDate } from '../utils'
+
+const NOTIF_TYPES: Record<string, { icon: typeof Info; bg: string; bgActive: string; text: string; textActive: string; label: string }> = {
+  info: { icon: Info, bg: 'bg-blue-50', bgActive: 'bg-blue-50', text: 'text-blue-400', textActive: 'text-blue-500', label: 'Info' },
+  event: { icon: Calendar, bg: 'bg-emerald-50', bgActive: 'bg-emerald-50', text: 'text-emerald-400', textActive: 'text-emerald-500', label: 'Événement' },
+  important: { icon: AlertTriangle, bg: 'bg-amber-50', bgActive: 'bg-amber-50', text: 'text-amber-400', textActive: 'text-amber-500', label: 'Important' },
+}
+
+function getNotifType(type?: string) {
+  return NOTIF_TYPES[type ?? 'info'] ?? NOTIF_TYPES.info
+}
 
 export default function AlertesPage() {
   const { user, profile } = useAuth()
@@ -152,6 +162,8 @@ export default function AlertesPage() {
         <div className="space-y-3">
           {notifications.map((notif, i) => {
             const isRead = readIds.has(notif.id)
+            const nt = getNotifType(notif.type)
+            const TypeIcon = nt.icon
             return (
               <motion.div
                 key={notif.id}
@@ -163,19 +175,23 @@ export default function AlertesPage() {
                   'p-4 rounded-3xl border transition-all flex gap-4 group cursor-pointer',
                   isRead
                     ? 'bg-white border-slate-100'
-                    : 'bg-indigo-50/30 border-indigo-100 shadow-sm ring-1 ring-indigo-100'
+                    : notif.type === 'important'
+                      ? 'bg-amber-50/30 border-amber-200 shadow-sm ring-1 ring-amber-100'
+                      : notif.type === 'event'
+                        ? 'bg-emerald-50/30 border-emerald-200 shadow-sm ring-1 ring-emerald-100'
+                        : 'bg-blue-50/30 border-blue-200 shadow-sm ring-1 ring-blue-100'
                 )}
               >
                 <div
                   className={cn(
                     'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0',
-                    isRead ? 'bg-slate-50 text-slate-400' : 'bg-indigo-50 text-indigo-500'
+                    isRead ? 'bg-slate-50 text-slate-400' : `${nt.bgActive} ${nt.textActive}`
                   )}
                 >
-                  <Megaphone size={24} />
+                  <TypeIcon size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2 mb-1">
                     <h4
                       className={cn(
                         'font-bold truncate',
@@ -185,25 +201,25 @@ export default function AlertesPage() {
                       {notif.title}
                     </h4>
                     {!isRead && (
-                      <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full shrink-0 ml-2" />
+                      <div className={cn(
+                        'w-2.5 h-2.5 rounded-full shrink-0',
+                        notif.type === 'important' ? 'bg-amber-500' : notif.type === 'event' ? 'bg-emerald-500' : 'bg-blue-500'
+                      )} />
                     )}
                   </div>
                   <p className="text-sm text-slate-500 line-clamp-2 mb-2 leading-relaxed">
                     {notif.body}
                   </p>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       {notif.sent_at ? formatRelativeDate(notif.sent_at) : ''}
                     </span>
-                    {notif.news_id && (
-                      <Link
-                        to={`/news/${notif.news_id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1"
-                      >
-                        Voir l'article <ArrowRight size={12} />
-                      </Link>
-                    )}
+                    <span className={cn(
+                      'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full',
+                      notif.type === 'important' ? 'bg-amber-100 text-amber-600' : notif.type === 'event' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'
+                    )}>
+                      {nt.label}
+                    </span>
                   </div>
                 </div>
               </motion.div>
