@@ -12,6 +12,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminNews from './pages/admin/AdminNews'
 import AdminFeedback from './pages/admin/AdminFeedback'
+import AdminAlerts from './pages/admin/AdminAlerts'
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/news" element={<ProtectedRoute requireAdmin><AdminNews /></ProtectedRoute>} />
       <Route path="/admin/feedback" element={<ProtectedRoute requireAdmin><AdminFeedback /></ProtectedRoute>} />
+      <Route path="/admin/alerts" element={<ProtectedRoute requireAdmin><AdminAlerts /></ProtectedRoute>} />
     </Routes>
   )
 }

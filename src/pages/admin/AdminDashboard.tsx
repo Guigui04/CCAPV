@@ -4,24 +4,26 @@ import { supabase } from '../../lib/supabase'
 import AdminLayout from '../../components/AdminLayout'
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ articles: 0, pending: 0, total_feedbacks: 0 })
+  const [stats, setStats] = useState({ articles: 0, pending: 0, total_feedbacks: 0, alerts: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [articlesRes, pendingRes, totalFbRes] = await Promise.all([
+        const [articlesRes, pendingRes, totalFbRes, alertsRes] = await Promise.all([
           supabase.from('news').select('*', { count: 'exact', head: true }),
           supabase
             .from('feedback')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'new'),
           supabase.from('feedback').select('*', { count: 'exact', head: true }),
+          supabase.from('notifications').select('*', { count: 'exact', head: true }),
         ])
         setStats({
           articles: articlesRes.count ?? 0,
           pending: pendingRes.count ?? 0,
           total_feedbacks: totalFbRes.count ?? 0,
+          alerts: alertsRes.count ?? 0,
         })
       } catch (err) {
         console.error('Error loading stats:', err)
@@ -53,6 +55,13 @@ export default function AdminDashboard() {
       icon: '💬',
       to: '/admin/feedback',
       color: 'from-emerald-50 to-teal-50 border-emerald-100',
+    },
+    {
+      label: 'Alertes envoyées',
+      value: stats.alerts,
+      icon: '📢',
+      to: '/admin/alerts',
+      color: 'from-purple-50 to-fuchsia-50 border-purple-100',
     },
   ]
 
@@ -111,6 +120,18 @@ export default function AdminDashboard() {
                 <p className="font-semibold text-slate-900">Modérer les feedbacks</p>
                 <p className="text-xs text-slate-400">
                   Approuver, rejeter, supprimer
+                </p>
+              </div>
+            </Link>
+            <Link
+              to="/admin/alerts"
+              className="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow"
+            >
+              <span className="text-2xl">📢</span>
+              <div>
+                <p className="font-semibold text-slate-900">Envoyer une alerte</p>
+                <p className="text-xs text-slate-400">
+                  Notifier les jeunes
                 </p>
               </div>
             </Link>

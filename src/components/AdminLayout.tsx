@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FileText, MessageSquare, ArrowLeft, LogOut } from 'lucide-react'
+import { LayoutDashboard, FileText, MessageSquare, Megaphone, ArrowLeft, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../utils'
 
@@ -8,6 +8,7 @@ const ADMIN_NAV = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/news', label: 'Articles', icon: FileText },
   { to: '/admin/feedback', label: 'Feedbacks', icon: MessageSquare },
+  { to: '/admin/alerts', label: 'Alertes', icon: Megaphone },
 ]
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
