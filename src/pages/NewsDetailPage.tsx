@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, ExternalLink, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Calendar, ExternalLink, CheckCircle, Clock, Share2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getNewsById } from '../lib/newsService'
 import { submitFeedback } from '../lib/feedbackService'
@@ -23,6 +23,7 @@ export default function NewsDetailPage() {
   const [fbSent, setFbSent] = useState(false)
   const [fbLoading, setFbLoading] = useState(false)
   const [fbError, setFbError] = useState('')
+  const [shared, setShared] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -38,9 +39,25 @@ export default function NewsDetailPage() {
     }
   }, [id])
 
+  async function handleShare() {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: article?.title,
+          url: window.location.href,
+        })
+      } else {
+        await navigator.clipboard.writeText(window.location.href)
+        setShared(true)
+        setTimeout(() => setShared(false), 2000)
+      }
+    } catch {
+      // User cancelled share
+    }
+  }
+
   async function handleFeedback(e: React.FormEvent) {
     e.preventDefault()
-    // Rate limiting: 30s cooldown
     const lastSent = sessionStorage.getItem('fb_last_sent')
     if (lastSent && Date.now() - Number(lastSent) < 30000) {
       setFbError('Attends quelques secondes avant de renvoyer un avis.')
@@ -50,7 +67,7 @@ export default function NewsDetailPage() {
       setFbError('Choisis une réaction')
       return
     }
-    if (!user || !profile?.commune_id) {
+    if (!user) {
       setFbError('Tu dois être connecté pour donner ton avis')
       return
     }
@@ -60,7 +77,7 @@ export default function NewsDetailPage() {
       await submitFeedback({
         news_id: id!,
         user_id: user.id,
-        commune_id: profile.commune_id,
+        commune_id: profile?.commune_id || undefined,
         reaction: selectedReaction,
         comment: fbComment || undefined,
       })
@@ -78,28 +95,30 @@ export default function NewsDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
-      {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-6">
         {loading ? (
-          <div className="flex justify-center py-24">
-            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-4 animate-pulse">
+            <div className="h-6 bg-slate-200 rounded w-32" />
+            <div className="h-64 bg-slate-200 rounded-3xl" />
+            <div className="h-8 bg-slate-200 rounded w-3/4" />
+            <div className="h-4 bg-slate-200 rounded w-full" />
+            <div className="h-4 bg-slate-200 rounded w-5/6" />
           </div>
         ) : !notFound && article ? (
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {/* Hero image */}
-            {article.image_url && (
-              <img
-                src={article.image_url}
-                alt={article.title}
-                loading="lazy"
-                className="w-full h-64 sm:h-80 object-cover rounded-3xl mb-8 shadow-sm"
-              />
-            )}
+            {/* Back button */}
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors mb-5 text-sm font-medium"
+            >
+              <ArrowLeft size={16} />
+              Retour
+            </button>
 
-            {/* Meta */}
+            {/* Category + date header */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               {parentTab && (
                 <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full text-white', parentTab.color)}>
@@ -107,26 +126,51 @@ export default function NewsDetailPage() {
                 </span>
               )}
               {cat && (
-                <span className={cn('badge-blue text-sm')}>
+                <span className="badge-blue text-xs">
                   {cat.label}
                 </span>
               )}
-              <span className="text-xs text-slate-400 flex items-center gap-1">
-                <Calendar size={12} />
-                {formatDate(article.created_at)}
-              </span>
             </div>
 
             {/* Title */}
-            <h1 className="font-display font-extrabold text-3xl text-slate-900 mb-4 leading-tight">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 leading-tight">
               {article.title}
             </h1>
 
+            {/* Meta row */}
+            <div className="flex items-center gap-4 mb-6 text-slate-400 text-xs">
+              <span className="flex items-center gap-1.5">
+                <Clock size={13} />
+                {formatDate(article.created_at)}
+              </span>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"
+              >
+                <Share2 size={13} />
+                {shared ? 'Lien copié !' : 'Partager'}
+              </button>
+            </div>
+
+            {/* Hero image */}
+            {article.image_url && (
+              <div className="rounded-2xl overflow-hidden mb-8 shadow-sm">
+                <img
+                  src={article.image_url}
+                  alt={article.title}
+                  loading="eager"
+                  className="w-full h-48 sm:h-72 object-cover"
+                />
+              </div>
+            )}
+
             {/* Summary */}
             {article.summary && (
-              <p className="text-lg text-slate-600 border-l-4 border-indigo-400 pl-4 mb-8 leading-relaxed">
-                {article.summary}
-              </p>
+              <div className="bg-indigo-50 rounded-2xl p-5 mb-8 border border-indigo-100">
+                <p className="text-indigo-900 font-medium text-base leading-relaxed">
+                  {article.summary}
+                </p>
+              </div>
             )}
 
             {/* Content */}
@@ -138,24 +182,28 @@ export default function NewsDetailPage() {
 
             {/* Links */}
             {article.links && article.links.length > 0 && (
-              <div className="mb-12 space-y-2">
+              <div className="mb-12">
                 <h3 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider mb-3">
                   Liens utiles
                 </h3>
-                {article.links.map((link: any, i: number) => (
-                  <a
-                    key={i}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all group"
-                  >
-                    <ExternalLink size={16} className="text-indigo-500 shrink-0" />
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">
-                      {link.label || link.url}
-                    </span>
-                  </a>
-                ))}
+                <div className="space-y-2">
+                  {article.links.map((link: any, i: number) => (
+                    <a
+                      key={i}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all group"
+                    >
+                      <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
+                        <ExternalLink size={16} className="text-indigo-500" />
+                      </div>
+                      <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">
+                        {link.label || link.url}
+                      </span>
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -243,7 +291,7 @@ export default function NewsDetailPage() {
           </motion.article>
         ) : (
           <div className="text-center py-20">
-            <p className="text-4xl mb-3">😕</p>
+            <p className="text-5xl mb-4">🔍</p>
             <h2 className="font-display font-bold text-xl text-slate-900 mb-2">
               Article introuvable
             </h2>

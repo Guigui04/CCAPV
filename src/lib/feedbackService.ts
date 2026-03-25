@@ -43,13 +43,17 @@ export async function submitFeedback({
 }: {
   news_id: string
   user_id: string
-  commune_id: string
+  commune_id?: string
   reaction: string
   comment?: string
 }) {
+  const row: Record<string, unknown> = { news_id, user_id, reaction }
+  if (commune_id) row.commune_id = commune_id
+  if (comment) row.comment = comment
+
   const { data, error } = await supabase
     .from('feedback')
-    .insert([{ news_id, user_id, commune_id, reaction, comment }])
+    .insert([row])
     .select()
     .single()
   if (error) throw error

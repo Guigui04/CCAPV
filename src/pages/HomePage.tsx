@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getPublishedNews } from '../lib/newsService'
 import { TABS, getCategoryById, getTabById } from '../constants'
-import { ArrowRight, Calendar, ChevronDown } from 'lucide-react'
+import { ArrowRight, Calendar, ChevronDown, Clock, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn, formatDate } from '../utils'
 
@@ -25,7 +25,8 @@ export default function HomePage() {
       .finally(() => setLoading(false))
   }, [selectedTab, selectedSub])
 
-  const featured = articles.slice(0, 3)
+  const featured = articles[0]
+  const rest = articles.slice(1)
 
   function handleTabClick(tabId: string) {
     if (selectedTab === tabId) {
@@ -45,17 +46,20 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8 pb-8">
-      {/* A la une */}
+      {/* Hero featured article */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
-            A la une
-          </h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} className="text-indigo-500" />
+            <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">
+              A la une
+            </h2>
+          </div>
           <Link
             to="/explorer"
-            className="text-indigo-600 text-xs font-bold uppercase tracking-wider hover:text-indigo-800 transition-colors"
+            className="text-indigo-600 text-xs font-bold uppercase tracking-wider hover:text-indigo-800 transition-colors flex items-center gap-1"
           >
-            Voir tout
+            Tout voir <ArrowRight size={14} />
           </Link>
         </div>
 
@@ -64,70 +68,111 @@ export default function HomePage() {
             {error}
           </div>
         ) : loading && !selectedTab ? (
-          <div className="h-48 bg-slate-200 rounded-3xl animate-pulse" />
-        ) : featured.length === 0 ? (
-          <div className="h-48 bg-white rounded-3xl border border-slate-200 flex items-center justify-center text-slate-400 font-medium">
-            Aucune actualite pour le moment
+          <div className="space-y-4">
+            <div className="h-56 bg-slate-200 rounded-3xl animate-pulse" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-32 bg-slate-200 rounded-2xl animate-pulse" />
+              <div className="h-32 bg-slate-200 rounded-2xl animate-pulse" />
+            </div>
+          </div>
+        ) : featured ? (
+          <div className="space-y-3">
+            {/* Main featured */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Link
+                to={`/news/${featured.id}`}
+                className="block rounded-3xl overflow-hidden group"
+              >
+                <div className="relative h-56">
+                  {featured.image_url ? (
+                    <img
+                      src={featured.image_url}
+                      alt={featured.title}
+                      loading="eager"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-5">
+                    {(() => {
+                      const cat = getCategoryById(featured.category_id)
+                      return cat ? (
+                        <span className={cn('text-[10px] font-bold px-2.5 py-1 rounded-full text-white mb-2 inline-block', cat.tabColor)}>
+                          {cat.tabIcon} {cat.label}
+                        </span>
+                      ) : null
+                    })()}
+                    <h3 className="text-white font-display font-extrabold text-xl leading-tight line-clamp-2 mb-1.5">
+                      {featured.title}
+                    </h3>
+                    {featured.summary && (
+                      <p className="text-white/70 text-sm line-clamp-2 leading-relaxed">
+                        {featured.summary}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-white/50 text-xs mt-2">
+                      <Clock size={12} />
+                      <span>{formatDate(featured.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Secondary featured (2 small cards) */}
+            {articles.length > 1 && (
+              <div className="grid grid-cols-2 gap-3">
+                {articles.slice(1, 3).map((a, i) => {
+                  const cat = getCategoryById(a.category_id)
+                  return (
+                    <motion.div
+                      key={a.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + i * 0.05 }}
+                    >
+                      <Link
+                        to={`/news/${a.id}`}
+                        className="block rounded-2xl overflow-hidden group h-36 relative"
+                      >
+                        {a.image_url ? (
+                          <img
+                            src={a.image_url}
+                            alt={a.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className={cn('w-full h-full', cat?.tabColor ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600')} />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                          <h4 className="text-white font-bold text-xs leading-tight line-clamp-2">
+                            {a.title}
+                          </h4>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         ) : (
-          <div className="flex overflow-x-auto gap-4 pb-2 snap-x scrollbar-hide -mx-4 px-4">
-            {featured.map((a, i) => {
-              const cat = getCategoryById(a.category_id)
-              return (
-                <motion.div
-                  key={a.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <Link
-                    to={`/news/${a.id}`}
-                    className="min-w-[280px] snap-center relative rounded-3xl overflow-hidden h-48 flex-shrink-0 block group"
-                  >
-                    {a.image_url ? (
-                      <img
-                        src={a.image_url}
-                        alt={a.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div
-                        className={cn(
-                          'w-full h-full flex items-center justify-center text-5xl',
-                          cat?.tabColor ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
-                        )}
-                      >
-                        {cat?.tabIcon ?? '📰'}
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <span className="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2 inline-block">
-                        {cat?.label ?? 'Info'}
-                      </span>
-                      <h3 className="text-white font-bold text-base leading-tight line-clamp-2">
-                        {a.title}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-white/60 text-[11px] mt-1.5">
-                        <Calendar size={11} />
-                        <span>{formatDate(a.created_at)}</span>
-                      </div>
-                    </div>
-                    <div className="absolute bottom-4 right-4 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-indigo-600 transition-colors text-white">
-                      <ArrowRight size={14} />
-                    </div>
-                  </Link>
-                </motion.div>
-              )
-            })}
+          <div className="h-48 bg-white rounded-3xl border border-slate-200 flex items-center justify-center text-slate-400 font-medium">
+            Aucune actualite pour le moment
           </div>
         )}
       </section>
 
       {/* Onglets */}
       <section>
-        <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight mb-4">
+        <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight mb-4">
           Thematiques
         </h2>
         <div className="space-y-2">
@@ -188,10 +233,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Liste des articles */}
+      {/* Liste des articles - nouveau design cartes horizontales */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">
             {selectedSub
               ? getCategoryById(selectedSub)?.label
               : activeTab
@@ -214,7 +259,15 @@ export default function HomePage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-44 bg-slate-200 rounded-3xl animate-pulse" />
+              <div key={i} className="flex gap-4 animate-pulse">
+                <div className="w-28 h-24 bg-slate-200 rounded-2xl shrink-0" />
+                <div className="flex-1 space-y-2 py-1">
+                  <div className="h-3 bg-slate-200 rounded w-16" />
+                  <div className="h-4 bg-slate-200 rounded w-full" />
+                  <div className="h-4 bg-slate-200 rounded w-3/4" />
+                  <div className="h-3 bg-slate-200 rounded w-20" />
+                </div>
+              </div>
             ))}
           </div>
         ) : articles.length === 0 ? (
@@ -224,52 +277,70 @@ export default function HomePage() {
             <p className="text-slate-400 text-sm mt-1">Essayez une autre thematique</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {articles.map((a, i) => {
+          <div className="space-y-3">
+            {(rest.length > 0 ? rest : articles).map((a, i) => {
               const cat = getCategoryById(a.category_id)
               return (
                 <motion.div
                   key={a.id}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
+                  transition={{ delay: i * 0.03 }}
                 >
                   <Link
                     to={`/news/${a.id}`}
-                    className="relative rounded-3xl overflow-hidden h-44 block group"
+                    className="flex gap-4 bg-white rounded-2xl border border-slate-100 p-3 group hover:shadow-md hover:border-slate-200 transition-all"
                   >
-                    {a.image_url ? (
-                      <img
-                        src={a.image_url}
-                        alt={a.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div
-                        className={cn(
-                          'w-full h-full flex items-center justify-center text-6xl',
+                    {/* Thumbnail */}
+                    <div className="w-28 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                      {a.image_url ? (
+                        <img
+                          src={a.image_url}
+                          alt={a.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className={cn(
+                          'w-full h-full flex items-center justify-center text-3xl',
                           cat?.tabColor ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
+                        )}>
+                          {cat?.tabIcon ?? '📰'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div>
+                        {cat && (
+                          <span className={cn(
+                            'text-[10px] font-bold uppercase tracking-wider',
+                            cat.tabColor === 'bg-violet-500' ? 'text-violet-600' :
+                            cat.tabColor === 'bg-blue-500' ? 'text-blue-600' :
+                            cat.tabColor === 'bg-teal-500' ? 'text-teal-600' :
+                            cat.tabColor === 'bg-rose-500' ? 'text-rose-600' :
+                            cat.tabColor === 'bg-sky-500' ? 'text-sky-600' :
+                            cat.tabColor === 'bg-amber-500' ? 'text-amber-600' :
+                            cat.tabColor === 'bg-purple-500' ? 'text-purple-600' :
+                            'text-indigo-600'
+                          )}>
+                            {cat.tabIcon} {cat.label}
+                          </span>
                         )}
-                      >
-                        {cat?.tabIcon ?? '📰'}
+                        <h3 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 mt-0.5 group-hover:text-indigo-600 transition-colors">
+                          {a.title}
+                        </h3>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-5">
-                      <span className="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2 inline-block">
-                        {cat?.label ?? 'Info'}
-                      </span>
-                      <h3 className="text-white font-bold text-lg leading-tight line-clamp-2">
-                        {a.title}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-white/60 text-[11px] mt-1.5">
+                      <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
                         <Calendar size={11} />
                         <span>{formatDate(a.created_at)}</span>
                       </div>
                     </div>
-                    <div className="absolute bottom-5 right-5 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-indigo-600 transition-colors text-white">
-                      <ArrowRight size={14} />
+
+                    {/* Arrow */}
+                    <div className="flex items-center shrink-0">
+                      <ArrowRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
                   </Link>
                 </motion.div>
@@ -280,10 +351,10 @@ export default function HomePage() {
 
         {/* Voir plus */}
         {articles.length >= 20 && (
-          <div className="text-center pt-2">
+          <div className="text-center pt-4">
             <Link
               to="/explorer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-sm font-bold text-indigo-600 hover:bg-indigo-100 transition-all"
             >
               Voir plus d'articles <ArrowRight size={16} />
             </Link>

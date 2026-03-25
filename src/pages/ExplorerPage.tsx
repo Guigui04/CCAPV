@@ -154,13 +154,21 @@ export default function ExplorerPage() {
         </div>
       )}
 
-      {/* Results */}
-      <div className="space-y-4">
+      {/* Results - horizontal card layout */}
+      <div className="space-y-3">
         <AnimatePresence mode="popLayout">
           {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-44 bg-slate-200 rounded-3xl animate-pulse" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex gap-4 animate-pulse">
+                  <div className="w-28 h-24 bg-slate-200 rounded-2xl shrink-0" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-3 bg-slate-200 rounded w-16" />
+                    <div className="h-4 bg-slate-200 rounded w-full" />
+                    <div className="h-4 bg-slate-200 rounded w-3/4" />
+                    <div className="h-3 bg-slate-200 rounded w-20" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : results.length > 0 ? (
@@ -170,47 +178,65 @@ export default function ExplorerPage() {
                 <motion.div
                   key={a.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2, delay: i * 0.03 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, delay: i * 0.02 }}
                 >
                   <Link
                     to={`/news/${a.id}`}
-                    className="relative rounded-3xl overflow-hidden h-44 block group"
+                    className="flex gap-4 bg-white rounded-2xl border border-slate-100 p-3 group hover:shadow-md hover:border-slate-200 transition-all"
                   >
-                    {a.image_url ? (
-                      <img
-                        src={a.image_url}
-                        alt={a.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div
-                        className={cn(
-                          'w-full h-full flex items-center justify-center text-6xl',
+                    {/* Thumbnail */}
+                    <div className="w-28 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                      {a.image_url ? (
+                        <img
+                          src={a.image_url}
+                          alt={a.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className={cn(
+                          'w-full h-full flex items-center justify-center text-3xl',
                           cat?.tabColor ?? 'bg-gradient-to-br from-indigo-400 to-indigo-600'
+                        )}>
+                          {cat?.tabIcon ?? '📰'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div>
+                        {cat && (
+                          <span className={cn(
+                            'text-[10px] font-bold uppercase tracking-wider',
+                            cat.tabColor === 'bg-violet-500' ? 'text-violet-600' :
+                            cat.tabColor === 'bg-blue-500' ? 'text-blue-600' :
+                            cat.tabColor === 'bg-teal-500' ? 'text-teal-600' :
+                            cat.tabColor === 'bg-rose-500' ? 'text-rose-600' :
+                            cat.tabColor === 'bg-sky-500' ? 'text-sky-600' :
+                            cat.tabColor === 'bg-amber-500' ? 'text-amber-600' :
+                            cat.tabColor === 'bg-purple-500' ? 'text-purple-600' :
+                            'text-indigo-600'
+                          )}>
+                            {cat.tabIcon} {cat.label}
+                          </span>
                         )}
-                      >
-                        {cat?.tabIcon ?? '📰'}
+                        <h3 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 mt-0.5 group-hover:text-indigo-600 transition-colors">
+                          {a.title}
+                        </h3>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-5">
-                      <span className="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2 inline-block">
-                        {cat?.label ?? 'Info'}
-                      </span>
-                      <h3 className="text-white font-bold text-lg leading-tight line-clamp-2">
-                        {a.title}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-white/60 text-[11px] mt-1.5">
+                      <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
                         <Calendar size={11} />
                         <span>{formatDate(a.created_at)}</span>
                       </div>
                     </div>
-                    <div className="absolute bottom-5 right-5 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-indigo-600 transition-colors text-white">
-                      <ArrowRight size={14} />
+
+                    {/* Arrow */}
+                    <div className="flex items-center shrink-0">
+                      <ArrowRight size={16} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
                   </Link>
                 </motion.div>
