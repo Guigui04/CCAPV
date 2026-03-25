@@ -13,6 +13,9 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminNews from './pages/admin/AdminNews'
 import AdminFeedback from './pages/admin/AdminFeedback'
 import AdminAlerts from './pages/admin/AdminAlerts'
+import AdminUsers from './pages/admin/AdminUsers'
+import FavorisPage from './pages/FavorisPage'
+import PrivacyPage from './pages/PrivacyPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 export default function App() {
@@ -29,14 +32,19 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-      {/* Protected profile page */}
+      {/* Protected pages */}
       <Route path="/profil" element={<ProtectedRoute><Layout><ProfilPage /></Layout></ProtectedRoute>} />
+      <Route path="/favoris" element={<ProtectedRoute><Layout><FavorisPage /></Layout></ProtectedRoute>} />
+
+      {/* Public info pages */}
+      <Route path="/confidentialite" element={<PrivacyPage />} />
 
       {/* Admin pages — require admin role */}
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/news" element={<ProtectedRoute requireAdmin><AdminNews /></ProtectedRoute>} />
       <Route path="/admin/feedback" element={<ProtectedRoute requireAdmin><AdminFeedback /></ProtectedRoute>} />
       <Route path="/admin/alerts" element={<ProtectedRoute requireAdmin><AdminAlerts /></ProtectedRoute>} />
+      <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
 
       {/* 404 catch-all */}
       <Route path="*" element={<NotFoundPage />} />
