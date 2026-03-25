@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, ExternalLink, CheckCircle, Clock, Share2 } from 'lucide-react'
+import { ArrowLeft, Calendar, ExternalLink, CheckCircle, Clock, Share2, Bookmark, BookmarkCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getNewsById } from '../lib/newsService'
 import { submitFeedback } from '../lib/feedbackService'
+import { addBookmark, removeBookmark, getBookmarks } from '../lib/bookmarkService'
 import { getCategoryById, getTabBySubcategoryId, REACTION_LABELS } from '../constants'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import { formatDate, cn } from '../utils'
 import MarkdownContent from '../components/MarkdownContent'
 
@@ -15,9 +17,11 @@ export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, profile } = useAuth()
+  const toast = useToast()
   const [article, setArticle] = useState<any>(null)
   const [notFound, setNotFound] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [bookmarked, setBookmarked] = useState(false)
   const [selectedReaction, setSelectedReaction] = useState('')
   const [fbComment, setFbComment] = useState('')
   const [fbSent, setFbSent] = useState(false)
@@ -38,6 +42,31 @@ export default function NewsDetailPage() {
         .finally(() => setLoading(false))
     }
   }, [id])
+
+  // Load bookmark state
+  useEffect(() => {
+    if (user && id) {
+      getBookmarks(user.id).then((set) => setBookmarked(set.has(id)))
+    }
+  }, [user, id])
+
+  async function toggleBookmark() {
+    if (!user || !id) return
+    const was = bookmarked
+    setBookmarked(!was)
+    try {
+      if (was) {
+        await removeBookmark(user.id, id)
+        toast.info('Retiré des favoris')
+      } else {
+        await addBookmark(user.id, id)
+        toast.success('Ajouté aux favoris')
+      }
+    } catch {
+      setBookmarked(was)
+      toast.error('Erreur')
+    }
+  }
 
   async function handleShare() {
     try {
@@ -150,6 +179,18 @@ export default function NewsDetailPage() {
                 <Share2 size={13} />
                 {shared ? 'Lien copié !' : 'Partager'}
               </button>
+              {user && (
+                <button
+                  onClick={toggleBookmark}
+                  className={cn(
+                    'flex items-center gap-1.5 transition-colors',
+                    bookmarked ? 'text-indigo-600' : 'hover:text-indigo-600'
+                  )}
+                >
+                  {bookmarked ? <BookmarkCheck size={13} /> : <Bookmark size={13} />}
+                  {bookmarked ? 'Sauvegardé' : 'Sauvegarder'}
+                </button>
+              )}
             </div>
 
             {/* Hero image */}

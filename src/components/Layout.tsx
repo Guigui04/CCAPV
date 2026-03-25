@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Search, Bell, User, LayoutDashboard } from 'lucide-react'
+import { Home, Search, Bell, Bookmark, User, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { path: '/', icon: Home, label: 'Accueil' },
   { path: '/explorer', icon: Search, label: 'Explorer' },
   { path: '/alertes', icon: Bell, label: 'Alertes' },
+  { path: '/favoris', icon: Bookmark, label: 'Favoris' },
   { path: '/profil', icon: User, label: 'Profil' },
 ]
 

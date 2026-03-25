@@ -4,13 +4,13 @@ import { supabase } from '../../lib/supabase'
 import AdminLayout from '../../components/AdminLayout'
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ articles: 0, pending: 0, total_feedbacks: 0, alerts: 0 })
+  const [stats, setStats] = useState({ articles: 0, pending: 0, total_feedbacks: 0, alerts: 0, users: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [articlesRes, pendingRes, totalFbRes, alertsRes] = await Promise.all([
+        const [articlesRes, pendingRes, totalFbRes, alertsRes, usersRes] = await Promise.all([
           supabase.from('news').select('*', { count: 'exact', head: true }),
           supabase
             .from('feedback')
@@ -18,12 +18,14 @@ export default function AdminDashboard() {
             .eq('status', 'new'),
           supabase.from('feedback').select('*', { count: 'exact', head: true }),
           supabase.from('notifications').select('*', { count: 'exact', head: true }),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
         ])
         setStats({
           articles: articlesRes.count ?? 0,
           pending: pendingRes.count ?? 0,
           total_feedbacks: totalFbRes.count ?? 0,
           alerts: alertsRes.count ?? 0,
+          users: usersRes.count ?? 0,
         })
       } catch (err) {
         console.error('Error loading stats:', err)
@@ -62,6 +64,13 @@ export default function AdminDashboard() {
       icon: '📢',
       to: '/admin/alerts',
       color: 'from-purple-50 to-fuchsia-50 border-purple-100',
+    },
+    {
+      label: 'Utilisateurs',
+      value: stats.users,
+      icon: '👥',
+      to: '/admin/users',
+      color: 'from-sky-50 to-cyan-50 border-sky-100',
     },
   ]
 
@@ -132,6 +141,18 @@ export default function AdminDashboard() {
                 <p className="font-semibold text-slate-900">Envoyer une alerte</p>
                 <p className="text-xs text-slate-400">
                   Notifier les jeunes
+                </p>
+              </div>
+            </Link>
+            <Link
+              to="/admin/users"
+              className="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow"
+            >
+              <span className="text-2xl">👥</span>
+              <div>
+                <p className="font-semibold text-slate-900">Gérer les utilisateurs</p>
+                <p className="text-xs text-slate-400">
+                  Voir les profils, modifier les rôles
                 </p>
               </div>
             </Link>

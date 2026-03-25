@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getPublishedNews } from '../lib/newsService'
-import { TABS, getCategoryById, getTabById } from '../constants'
+import { TABS, getCategoryById, getTabById, getTabBySubcategoryId } from '../constants'
 import { ArrowRight, Calendar, ChevronDown, Clock, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
 import { cn, formatDate } from '../utils'
 
 export default function HomePage() {
+  const { profile } = useAuth()
   const [articles, setArticles] = useState<any[]>([])
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
   const [selectedSub, setSelectedSub] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const interests = profile?.interests ?? []
 
   useEffect(() => {
     setLoading(true)
@@ -20,10 +24,24 @@ export default function HomePage() {
     const tabFilter = !selectedSub && selectedTab ? selectedTab : undefined
 
     getPublishedNews({ category: categoryFilter, tab: tabFilter, limit: 20 })
-      .then(({ data }) => setArticles(data))
+      .then(({ data }) => {
+        // If user has interests and no filter active, sort to prioritize matching articles
+        if (interests.length > 0 && !categoryFilter && !tabFilter) {
+          const sorted = [...data].sort((a, b) => {
+            const aTab = getTabBySubcategoryId(a.category_id)
+            const bTab = getTabBySubcategoryId(b.category_id)
+            const aMatch = aTab && interests.includes(aTab.id) ? 1 : 0
+            const bMatch = bTab && interests.includes(bTab.id) ? 1 : 0
+            return bMatch - aMatch
+          })
+          setArticles(sorted)
+        } else {
+          setArticles(data)
+        }
+      })
       .catch(() => setError('Impossible de charger les articles. Verifie ta connexion.'))
       .finally(() => setLoading(false))
-  }, [selectedTab, selectedSub])
+  }, [selectedTab, selectedSub, interests.join(',')])
 
   const featured = articles[0]
   const rest = articles.slice(1)
@@ -236,13 +254,22 @@ export default function HomePage() {
       {/* Liste des articles - nouveau design cartes horizontales */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">
-            {selectedSub
-              ? getCategoryById(selectedSub)?.label
-              : activeTab
-                ? activeTab.label
-                : 'Dernieres infos'}
-          </h2>
+          <div>
+            <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">
+              {selectedSub
+                ? getCategoryById(selectedSub)?.label
+                : activeTab
+                  ? activeTab.label
+                  : interests.length > 0
+                    ? 'Pour toi'
+                    : 'Dernieres infos'}
+            </h2>
+            {!selectedTab && !selectedSub && interests.length > 0 && (
+              <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider mt-0.5">
+                Basé sur tes centres d'intérêt
+              </p>
+            )}
+          </div>
           {(selectedTab || selectedSub) && (
             <button
               onClick={() => {

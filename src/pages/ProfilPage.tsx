@@ -414,7 +414,7 @@ export default function ProfilPage() {
             sublabel="Comment nous protégeons tes données"
             iconBg="bg-slate-50"
             iconColor="text-slate-400"
-            onClick={() => {}}
+            onClick={() => navigate('/confidentialite')}
           />
         </div>
       </Section>
