@@ -9,6 +9,7 @@ import { getCategoryById, getTabBySubcategoryId, REACTION_LABELS } from '../cons
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { formatDate, cn } from '../utils'
+import { isValidSafeUrl, LIMITS } from '../lib/validate'
 import MarkdownContent from '../components/MarkdownContent'
 
 const REACTIONS = Object.entries(REACTION_LABELS)
@@ -228,7 +229,9 @@ export default function NewsDetailPage() {
                   Liens utiles
                 </h3>
                 <div className="space-y-2">
-                  {article.links.map((link: any, i: number) => (
+                  {article.links
+                    .filter((link: any) => link.url && isValidSafeUrl(link.url))
+                    .map((link: any, i: number) => (
                     <a
                       key={i}
                       href={link.url}
@@ -309,6 +312,7 @@ export default function NewsDetailPage() {
                     className="input-field resize-none"
                     rows={3}
                     placeholder="Un commentaire ? (optionnel)"
+                    maxLength={LIMITS.COMMENT}
                     value={fbComment}
                     onChange={(e) => setFbComment(e.target.value)}
                   />

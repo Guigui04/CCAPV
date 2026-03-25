@@ -1,8 +1,31 @@
 /**
  * Lightweight markdown-like renderer for article content.
  * Supports: **bold**, *italic*, [links](url), - lists, ## headings, paragraphs.
- * No dependencies.
+ * Sanitized with DOMPurify to prevent XSS.
  */
+import DOMPurify from 'dompurify'
+
+// Only allow safe URL protocols in links
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A') {
+    const href = node.getAttribute('href') || ''
+    try {
+      const url = new URL(href, window.location.origin)
+      if (!['http:', 'https:', 'mailto:'].includes(url.protocol)) {
+        node.removeAttribute('href')
+      }
+    } catch {
+      node.removeAttribute('href')
+    }
+    node.setAttribute('target', '_blank')
+    node.setAttribute('rel', 'noopener noreferrer')
+  }
+})
+
+const PURIFY_CONFIG = {
+  ALLOWED_TAGS: ['strong', 'em', 'a', 'br'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+}
 
 function escapeHtml(text: string) {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -19,7 +42,8 @@ function parseInline(text: string): string {
     /\[(.+?)\]\((.+?)\)/g,
     '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline hover:text-indigo-800">$1</a>'
   )
-  return html
+  // Sanitize the result
+  return DOMPurify.sanitize(html, PURIFY_CONFIG)
 }
 
 export default function MarkdownContent({ content }: { content: string }) {

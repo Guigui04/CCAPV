@@ -26,6 +26,7 @@ import { cn, formatDate } from '../utils'
 import { TABS } from '../constants'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
+import { validatePassword, isValidBirthDate } from '../lib/validate'
 
 export default function ProfilPage() {
   const { user, profile, isAdmin, logout, updateProfile, changePassword, deleteAccount } = useAuth()
@@ -91,11 +92,15 @@ export default function ProfilPage() {
   }
 
   async function handleSave() {
+    if (birthDate && !isValidBirthDate(birthDate)) {
+      toast.error('Date de naissance invalide')
+      return
+    }
     setSaving(true)
     try {
       await updateProfile({
-        first_name: firstName.trim() || undefined,
-        last_name: lastName.trim() || undefined,
+        first_name: firstName.trim().slice(0, 50) || undefined,
+        last_name: lastName.trim().slice(0, 50) || undefined,
         birth_date: birthDate || undefined,
       })
       setEditing(false)
@@ -122,8 +127,9 @@ export default function ProfilPage() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
     setPwdMsg(null)
-    if (newPwd.length < 6) {
-      setPwdMsg({ type: 'err', text: '6 caractères minimum' })
+    const pwdCheck = validatePassword(newPwd)
+    if (!pwdCheck.valid) {
+      setPwdMsg({ type: 'err', text: pwdCheck.errors.join(', ') })
       return
     }
     if (newPwd !== confirmPwd) {
