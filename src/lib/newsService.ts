@@ -1,25 +1,34 @@
 import { supabase } from './supabase'
 import { getTabById } from '../constants'
 
+export type SortOption = 'recent' | 'oldest' | 'title_asc' | 'title_desc'
+
 export async function getPublishedNews({
   category,
   tab,
   page = 1,
   limit = 12,
   search,
+  sort = 'recent',
 }: {
   category?: string
   tab?: string
   page?: number
   limit?: number
   search?: string
+  sort?: SortOption
 } = {}) {
   let query = supabase
     .from('news')
     .select('*', { count: 'exact' })
     .eq('status', 'published')
-    .order('created_at', { ascending: false })
-    .range((page - 1) * limit, page * limit - 1)
+
+  if (sort === 'recent') query = query.order('created_at', { ascending: false })
+  else if (sort === 'oldest') query = query.order('created_at', { ascending: true })
+  else if (sort === 'title_asc') query = query.order('title', { ascending: true })
+  else if (sort === 'title_desc') query = query.order('title', { ascending: false })
+
+  query = query.range((page - 1) * limit, page * limit - 1)
 
   if (category) {
     query = query.eq('category_id', category)

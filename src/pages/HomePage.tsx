@@ -88,6 +88,7 @@ export default function HomePage() {
                       <img
                         src={a.image_url}
                         alt={a.title}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
@@ -241,6 +242,7 @@ export default function HomePage() {
                       <img
                         src={a.image_url}
                         alt={a.title}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
@@ -273,6 +275,18 @@ export default function HomePage() {
                 </motion.div>
               )
             })}
+          </div>
+        )}
+
+        {/* Voir plus */}
+        {articles.length >= 20 && (
+          <div className="text-center pt-2">
+            <Link
+              to="/explorer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-all"
+            >
+              Voir plus d'articles <ArrowRight size={16} />
+            </Link>
           </div>
         )}
       </section>
