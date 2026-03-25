@@ -19,14 +19,14 @@ export default function AlertesPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!user || !profile?.commune_id) {
+    if (!user) {
       setLoading(false)
       return
     }
     async function load() {
       try {
         const [notifs, reads] = await Promise.all([
-          getNotifications(profile!.commune_id!),
+          getNotifications(profile?.commune_id || undefined),
           getReadNotificationIds(user!.id),
         ])
         setNotifications(notifs)

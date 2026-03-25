@@ -12,7 +12,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 
 export default function AdminFeedback() {
   const [feedbacks, setFeedbacks] = useState<any[]>([])
-  const [authors, setAuthors] = useState<Record<string, { first_name?: string; last_name?: string }>>({})
+  const [authors, setAuthors] = useState<Record<string, { first_name?: string; last_name?: string; email?: string }>>({})
   const [total, setTotal] = useState(0)
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
@@ -31,12 +31,12 @@ export default function AdminFeedback() {
         if (userIds.length > 0) {
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, first_name, last_name')
+            .select('id, first_name, last_name, email')
             .in('id', userIds)
           if (profiles) {
-            const map: Record<string, { first_name?: string; last_name?: string }> = {}
+            const map: Record<string, { first_name?: string; last_name?: string; email?: string }> = {}
             for (const p of profiles) {
-              map[p.id] = { first_name: p.first_name, last_name: p.last_name }
+              map[p.id] = { first_name: p.first_name, last_name: p.last_name, email: p.email }
             }
             setAuthors(map)
           }
@@ -131,12 +131,19 @@ export default function AdminFeedback() {
               </div>
               {/* Auteur */}
               <div className="flex items-center gap-2 mt-2 mb-1">
-                <div className="w-6 h-6 bg-indigo-50 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-indigo-50 rounded-full flex items-center justify-center shrink-0">
                   <User size={12} className="text-indigo-500" />
                 </div>
-                <span className="text-sm font-medium text-slate-600">
-                  {getAuthorName(f.user_id)}
-                </span>
+                <div className="min-w-0">
+                  <span className="text-sm font-medium text-slate-700 block">
+                    {getAuthorName(f.user_id)}
+                  </span>
+                  {authors[f.user_id]?.email && (
+                    <span className="text-xs text-slate-400 block truncate">
+                      {authors[f.user_id].email}
+                    </span>
+                  )}
+                </div>
               </div>
               {f.comment && (
                 <p className="text-slate-700 text-sm leading-relaxed mt-1">{f.comment}</p>
