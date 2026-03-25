@@ -19,7 +19,7 @@ export default function App() {
       <Route path="/" element={<Layout><HomePage /></Layout>} />
       <Route path="/explorer" element={<Layout><ExplorerPage /></Layout>} />
       <Route path="/alertes" element={<Layout><AlertesPage /></Layout>} />
-      <Route path="/news/:id" element={<NewsDetailPage />} />
+      <Route path="/news/:id" element={<Layout><NewsDetailPage /></Layout>} />
 
       {/* Auth pages — no layout wrapper */}
       <Route path="/login" element={<LoginPage />} />

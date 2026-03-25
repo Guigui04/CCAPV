@@ -6,7 +6,7 @@ export async function getFeedbacks({
   limit = 20,
 }: { status?: string; page?: number; limit?: number } = {}) {
   let query = supabase
-    .from('feedbacks')
+    .from('feedback')
     .select('*, news(title)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
@@ -20,7 +20,7 @@ export async function getFeedbacks({
 
 export async function updateFeedbackStatus(id: string, status: string) {
   const { data, error } = await supabase
-    .from('feedbacks')
+    .from('feedback')
     .update({ status })
     .eq('id', id)
     .select()
@@ -30,22 +30,26 @@ export async function updateFeedbackStatus(id: string, status: string) {
 }
 
 export async function deleteFeedback(id: string) {
-  const { error } = await supabase.from('feedbacks').delete().eq('id', id)
+  const { error } = await supabase.from('feedback').delete().eq('id', id)
   if (error) throw error
 }
 
 export async function submitFeedback({
   news_id,
-  author_email,
-  content,
+  user_id,
+  commune_id,
+  reaction,
+  comment,
 }: {
   news_id: string
-  author_email: string
-  content: string
+  user_id: string
+  commune_id: string
+  reaction: string
+  comment?: string
 }) {
   const { data, error } = await supabase
-    .from('feedbacks')
-    .insert([{ news_id, author_email, content, status: 'pending' }])
+    .from('feedback')
+    .insert([{ news_id, user_id, commune_id, reaction, comment }])
     .select()
     .single()
   if (error) throw error

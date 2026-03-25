@@ -4,6 +4,7 @@ import {
   updateFeedbackStatus,
   deleteFeedback,
 } from '../../lib/feedbackService'
+import { REACTION_LABELS, FEEDBACK_STATUS_LABELS } from '../../constants'
 import AdminLayout from '../../components/AdminLayout'
 
 export default function AdminFeedback() {
@@ -31,16 +32,24 @@ export default function AdminFeedback() {
   const totalPages = Math.ceil(total / LIMIT)
 
   function statusBadge(s: string) {
-    if (s === 'approved') return <span className="badge-green">✅ Approuvé</span>
-    if (s === 'rejected') return <span className="badge-red">❌ Rejeté</span>
-    return <span className="badge-yellow">⏳ En attente</span>
+    if (s === 'processed') return <span className="badge-green">Traité</span>
+    if (s === 'archived') return <span className="badge-gray">Archivé</span>
+    return <span className="badge-yellow">Nouveau</span>
+  }
+
+  function reactionBadge(r: string) {
+    return (
+      <span className="badge-blue text-xs">
+        {REACTION_LABELS[r] ?? r}
+      </span>
+    )
   }
 
   const FILTERS = [
     { value: '', label: 'Tous' },
-    { value: 'pending', label: '⏳ En attente' },
-    { value: 'approved', label: '✅ Approuvés' },
-    { value: 'rejected', label: '❌ Rejetés' },
+    { value: 'new', label: 'Nouveaux' },
+    { value: 'processed', label: 'Traités' },
+    { value: 'archived', label: 'Archivés' },
   ]
 
   return (
@@ -84,7 +93,7 @@ export default function AdminFeedback() {
             <div key={f.id} className="card p-5">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {statusBadge(f.status)}
-                <span className="text-xs text-slate-400">{f.author_email}</span>
+                {reactionBadge(f.reaction)}
                 {f.news?.title && (
                   <span className="text-xs text-slate-400">· {f.news.title}</span>
                 )}
@@ -92,26 +101,28 @@ export default function AdminFeedback() {
                   {new Date(f.created_at).toLocaleDateString('fr-FR')}
                 </span>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">{f.content}</p>
+              {f.comment && (
+                <p className="text-slate-700 text-sm leading-relaxed">{f.comment}</p>
+              )}
               <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
-                {f.status !== 'approved' && (
+                {f.status === 'new' && (
                   <button
                     onClick={() =>
-                      updateFeedbackStatus(f.id, 'approved').then(load)
+                      updateFeedbackStatus(f.id, 'processed').then(load)
                     }
                     className="btn-secondary btn-sm text-xs text-green-700"
                   >
-                    ✅ Approuver
+                    Marquer traité
                   </button>
                 )}
-                {f.status !== 'rejected' && (
+                {f.status !== 'archived' && (
                   <button
                     onClick={() =>
-                      updateFeedbackStatus(f.id, 'rejected').then(load)
+                      updateFeedbackStatus(f.id, 'archived').then(load)
                     }
-                    className="btn-secondary btn-sm text-xs text-yellow-700"
+                    className="btn-secondary btn-sm text-xs text-slate-600"
                   >
-                    ❌ Rejeter
+                    Archiver
                   </button>
                 )}
                 <button

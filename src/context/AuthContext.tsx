@@ -8,6 +8,7 @@ interface Profile {
   first_name?: string
   last_name?: string
   role: 'user' | 'super_admin' | 'commune_admin'
+  commune_id?: string
   birth_date?: string
   created_at?: string
 }
