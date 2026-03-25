@@ -6,6 +6,7 @@ import {
 } from '../../lib/feedbackService'
 import { REACTION_LABELS, FEEDBACK_STATUS_LABELS } from '../../constants'
 import AdminLayout from '../../components/AdminLayout'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 export default function AdminFeedback() {
   const [feedbacks, setFeedbacks] = useState<any[]>([])
@@ -13,6 +14,7 @@ export default function AdminFeedback() {
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const LIMIT = 20
 
   const load = useCallback(() => {
@@ -126,10 +128,7 @@ export default function AdminFeedback() {
                   </button>
                 )}
                 <button
-                  onClick={() => {
-                    if (confirm('Supprimer ce feedback ?'))
-                      deleteFeedback(f.id).then(load)
-                  }}
+                  onClick={() => setDeleteId(f.id)}
                   className="btn-danger btn-sm text-xs ml-auto"
                 >
                   Supprimer
@@ -162,6 +161,16 @@ export default function AdminFeedback() {
           </button>
         </div>
       )}
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Supprimer le feedback"
+        message="Cette action est irreversible."
+        onCancel={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) deleteFeedback(deleteId).then(load)
+          setDeleteId(null)
+        }}
+      />
     </AdminLayout>
   )
 }

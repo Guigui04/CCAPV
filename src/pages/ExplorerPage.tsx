@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, X, Calendar, ArrowRight, SlidersHorizontal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getPublishedNews } from '../lib/newsService'
+import { getPublishedNews, type SortOption } from '../lib/newsService'
 import { TABS, getCategoryById } from '../constants'
 import { cn, formatDate } from '../utils'
 
@@ -11,6 +11,7 @@ export default function ExplorerPage() {
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
   const [selectedSub, setSelectedSub] = useState<string | null>(null)
   const [results, setResults] = useState<any[]>([])
+  const [sortBy, setSortBy] = useState<SortOption>('recent')
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
@@ -22,6 +23,7 @@ export default function ExplorerPage() {
       category: selectedSub || undefined,
       tab: !selectedSub && selectedTab ? selectedTab : undefined,
       search: searchTerm || undefined,
+      sort: sortBy,
       limit: 50,
     })
       .then(({ data, count }) => {
@@ -30,7 +32,7 @@ export default function ExplorerPage() {
       })
       .catch(() => setError('Impossible de charger les resultats.'))
       .finally(() => setLoading(false))
-  }, [searchTerm, selectedTab, selectedSub])
+  }, [searchTerm, selectedTab, selectedSub, sortBy])
 
   useEffect(() => {
     const timeout = setTimeout(doSearch, 300)
@@ -132,12 +134,24 @@ export default function ExplorerPage() {
         </div>
       )}
 
-      {/* Results count */}
+      {/* Results count + sort */}
       {!loading && !error && (
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-          {total} resultat{total !== 1 ? 's' : ''}
-          {searchTerm && <> pour &laquo; {searchTerm} &raquo;</>}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            {total} resultat{total !== 1 ? 's' : ''}
+            {searchTerm && <> pour &laquo; {searchTerm} &raquo;</>}
+          </p>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="text-xs bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-slate-600 font-medium outline-none focus:border-indigo-300"
+          >
+            <option value="recent">Plus recents</option>
+            <option value="oldest">Plus anciens</option>
+            <option value="title_asc">Titre A-Z</option>
+            <option value="title_desc">Titre Z-A</option>
+          </select>
+        </div>
       )}
 
       {/* Results */}

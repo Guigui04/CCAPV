@@ -7,6 +7,7 @@ import { submitFeedback } from '../lib/feedbackService'
 import { getCategoryById, getTabBySubcategoryId, REACTION_LABELS } from '../constants'
 import { useAuth } from '../context/AuthContext'
 import { formatDate, cn } from '../utils'
+import MarkdownContent from '../components/MarkdownContent'
 
 const REACTIONS = Object.entries(REACTION_LABELS)
 
@@ -15,6 +16,7 @@ export default function NewsDetailPage() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
   const [article, setArticle] = useState<any>(null)
+  const [notFound, setNotFound] = useState(false)
   const [loading, setLoading] = useState(true)
   const [selectedReaction, setSelectedReaction] = useState('')
   const [fbComment, setFbComment] = useState('')
@@ -24,15 +26,26 @@ export default function NewsDetailPage() {
 
   useEffect(() => {
     if (id) {
+      setLoading(true)
+      setNotFound(false)
       getNewsById(id)
-        .then(setArticle)
-        .catch(() => setArticle(null))
+        .then((data) => {
+          if (data) setArticle(data)
+          else setNotFound(true)
+        })
+        .catch(() => setNotFound(true))
         .finally(() => setLoading(false))
     }
   }, [id])
 
   async function handleFeedback(e: React.FormEvent) {
     e.preventDefault()
+    // Rate limiting: 30s cooldown
+    const lastSent = sessionStorage.getItem('fb_last_sent')
+    if (lastSent && Date.now() - Number(lastSent) < 30000) {
+      setFbError('Attends quelques secondes avant de renvoyer un avis.')
+      return
+    }
     if (!selectedReaction) {
       setFbError('Choisis une réaction')
       return
@@ -51,6 +64,7 @@ export default function NewsDetailPage() {
         reaction: selectedReaction,
         comment: fbComment || undefined,
       })
+      sessionStorage.setItem('fb_last_sent', String(Date.now()))
       setFbSent(true)
     } catch (err: any) {
       setFbError(err.message || "Erreur lors de l'envoi")
@@ -70,7 +84,7 @@ export default function NewsDetailPage() {
           <div className="flex justify-center py-24">
             <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : article ? (
+        ) : !notFound && article ? (
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -117,8 +131,8 @@ export default function NewsDetailPage() {
 
             {/* Content */}
             {article.content && (
-              <div className="text-slate-700 leading-relaxed whitespace-pre-wrap text-base mb-12">
-                {article.content}
+              <div className="text-base mb-12">
+                <MarkdownContent content={article.content} />
               </div>
             )}
 

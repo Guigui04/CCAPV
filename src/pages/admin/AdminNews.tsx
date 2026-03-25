@@ -9,6 +9,7 @@ import {
 import { TABS, getCategoryById } from '../../constants'
 import { supabase } from '../../lib/supabase'
 import AdminLayout from '../../components/AdminLayout'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 const EMPTY = {
   title: '',
@@ -28,6 +29,7 @@ export default function AdminNews() {
   const [form, setForm] = useState<any>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const LIMIT = 20
 
@@ -187,10 +189,7 @@ export default function AdminNews() {
                             Modifier
                           </button>
                           <button
-                            onClick={() => {
-                              if (confirm('Supprimer cet article ?'))
-                                deleteNews(a.id).then(load)
-                            }}
+                            onClick={() => setDeleteId(a.id)}
                             className="btn-danger btn-sm text-xs"
                           >
                             Supprimer
@@ -455,6 +454,16 @@ export default function AdminNews() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={!!deleteId}
+        title="Supprimer l'article"
+        message="Cette action est irreversible. L'article sera definitivement supprime."
+        onCancel={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) deleteNews(deleteId).then(load)
+          setDeleteId(null)
+        }}
+      />
     </AdminLayout>
   )
 }

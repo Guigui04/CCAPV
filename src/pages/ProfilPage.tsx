@@ -9,10 +9,8 @@ import {
   Calendar,
   Shield,
   ChevronRight,
-  Settings,
   Bell,
-  ShieldCheck,
-  HelpCircle,
+  Search,
   Pencil,
   Check,
   X,
@@ -72,31 +70,17 @@ export default function ProfilPage() {
   const menuItems = [
     {
       icon: Bell,
-      label: 'Préférences de notification',
+      label: 'Mes alertes',
       color: 'text-blue-500',
       bg: 'bg-blue-50',
       to: '/alertes',
     },
     {
-      icon: ShieldCheck,
-      label: 'Confidentialité',
+      icon: Search,
+      label: 'Explorer les infos',
       color: 'text-emerald-500',
       bg: 'bg-emerald-50',
-      to: null,
-    },
-    {
-      icon: HelpCircle,
-      label: 'Aide & contact',
-      color: 'text-amber-500',
-      bg: 'bg-amber-50',
-      to: null,
-    },
-    {
-      icon: Settings,
-      label: 'Paramètres',
-      color: 'text-slate-500',
-      bg: 'bg-slate-50',
-      to: null,
+      to: '/explorer',
     },
   ]
 
@@ -307,12 +291,7 @@ export default function ProfilPage() {
           <button
             key={i}
             onClick={() => item.to && navigate(item.to)}
-            className={cn(
-              'w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 transition-all group',
-              item.to
-                ? 'hover:bg-slate-50 cursor-pointer'
-                : 'opacity-60 cursor-not-allowed'
-            )}
+            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 transition-all group hover:bg-slate-50 cursor-pointer"
           >
             <div className="flex items-center gap-4">
               <div
@@ -325,11 +304,6 @@ export default function ProfilPage() {
                 <item.icon size={20} />
               </div>
               <span className="font-bold text-slate-700 text-sm">{item.label}</span>
-              {!item.to && (
-                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Bientôt
-                </span>
-              )}
             </div>
             <ChevronRight
               size={18}
