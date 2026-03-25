@@ -11,16 +11,17 @@ export default function HomePage() {
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
   const [selectedSub, setSelectedSub] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     setLoading(true)
-    // If a subcategory is selected, filter by it; if only a tab, filter by all its subcategories
+    setError('')
     const categoryFilter = selectedSub || undefined
     const tabFilter = !selectedSub && selectedTab ? selectedTab : undefined
 
     getPublishedNews({ category: categoryFilter, tab: tabFilter, limit: 20 })
       .then(({ data }) => setArticles(data))
-      .catch(console.error)
+      .catch(() => setError('Impossible de charger les articles. Verifie ta connexion.'))
       .finally(() => setLoading(false))
   }, [selectedTab, selectedSub])
 
@@ -58,7 +59,11 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {loading && !selectedTab ? (
+        {error ? (
+          <div className="p-4 bg-red-50 rounded-2xl border border-red-100 text-red-600 text-sm font-medium text-center">
+            {error}
+          </div>
+        ) : loading && !selectedTab ? (
           <div className="h-48 bg-slate-200 rounded-3xl animate-pulse" />
         ) : featured.length === 0 ? (
           <div className="h-48 bg-white rounded-3xl border border-slate-200 flex items-center justify-center text-slate-400 font-medium">

@@ -8,6 +8,7 @@ import ProfilPage from './pages/ProfilPage'
 import NewsDetailPage from './pages/NewsDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminNews from './pages/admin/AdminNews'
 import AdminFeedback from './pages/admin/AdminFeedback'
@@ -24,6 +25,7 @@ export default function App() {
       {/* Auth pages — no layout wrapper */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Protected profile page */}
       <Route path="/profil" element={<ProtectedRoute><Layout><ProfilPage /></Layout></ProtectedRoute>} />
