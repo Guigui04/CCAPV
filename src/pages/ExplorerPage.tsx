@@ -13,9 +13,11 @@ export default function ExplorerPage() {
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
+  const [error, setError] = useState('')
 
   const doSearch = useCallback(() => {
     setLoading(true)
+    setError('')
     getPublishedNews({
       category: selectedSub || undefined,
       tab: !selectedSub && selectedTab ? selectedTab : undefined,
@@ -26,7 +28,7 @@ export default function ExplorerPage() {
         setResults(data)
         setTotal(count)
       })
-      .catch(console.error)
+      .catch(() => setError('Impossible de charger les resultats.'))
       .finally(() => setLoading(false))
   }, [searchTerm, selectedTab, selectedSub])
 
@@ -123,8 +125,15 @@ export default function ExplorerPage() {
         </div>
       )}
 
+      {/* Error */}
+      {error && (
+        <div className="p-4 bg-red-50 rounded-2xl border border-red-100 text-red-600 text-sm font-medium text-center">
+          {error}
+        </div>
+      )}
+
       {/* Results count */}
-      {!loading && (
+      {!loading && !error && (
         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
           {total} resultat{total !== 1 ? 's' : ''}
           {searchTerm && <> pour &laquo; {searchTerm} &raquo;</>}

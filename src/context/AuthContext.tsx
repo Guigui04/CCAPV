@@ -22,6 +22,8 @@ interface AuthContextType {
   register: (email: string, password: string, extra?: { first_name?: string; last_name?: string }) => Promise<void>
   logout: () => Promise<void>
   loginWithGoogle: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+  updateProfile: (fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date'>>) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -104,17 +106,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: window.location.href,
       },
     })
     if (error) throw error
+  }
+
+  async function resetPassword(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    })
+    if (error) throw error
+  }
+
+  async function updateProfile(fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date'>>) {
+    if (!user) throw new Error('Non connecté')
+    const { error } = await supabase
+      .from('profiles')
+      .update(fields)
+      .eq('id', user.id)
+    if (error) throw error
+    await fetchProfile(user.id)
   }
 
   const isAdmin = profile?.role === 'super_admin' || profile?.role === 'commune_admin'
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, isAdmin, login, register, logout, loginWithGoogle }}
+      value={{ user, profile, loading, isAdmin, login, register, logout, loginWithGoogle, resetPassword, updateProfile }}
     >
       {children}
     </AuthContext.Provider>

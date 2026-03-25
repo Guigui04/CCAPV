@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Home, Search, Bell, User, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -31,6 +31,11 @@ export default function Layout({ children }: LayoutProps) {
       </div>
     )
   }
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
   const tabs = [...NAV_ITEMS]
   if (isAdmin) {
