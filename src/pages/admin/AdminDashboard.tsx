@@ -13,10 +13,10 @@ export default function AdminDashboard() {
         const [articlesRes, pendingRes, totalFbRes] = await Promise.all([
           supabase.from('news').select('*', { count: 'exact', head: true }),
           supabase
-            .from('feedbacks')
+            .from('feedback')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'pending'),
-          supabase.from('feedbacks').select('*', { count: 'exact', head: true }),
+            .eq('status', 'new'),
+          supabase.from('feedback').select('*', { count: 'exact', head: true }),
         ])
         setStats({
           articles: articlesRes.count ?? 0,

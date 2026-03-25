@@ -124,7 +124,7 @@ export const REACTION_LABELS: Record<string, string> = {
 }
 
 export const FEEDBACK_STATUS_LABELS: Record<string, string> = {
-  pending: 'En attente',
-  approved: 'Approuvé',
-  rejected: 'Rejeté',
+  new: 'Nouveau',
+  processed: 'Traité',
+  archived: 'Archivé',
 }

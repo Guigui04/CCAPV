@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, ExternalLink, Send, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Calendar, ExternalLink, CheckCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getNewsById } from '../lib/newsService'
 import { submitFeedback } from '../lib/feedbackService'
-import { getCategoryById, getTabBySubcategoryId } from '../constants'
+import { getCategoryById, getTabBySubcategoryId, REACTION_LABELS } from '../constants'
 import { useAuth } from '../context/AuthContext'
 import { formatDate, cn } from '../utils'
+
+const REACTIONS = Object.entries(REACTION_LABELS)
 
 export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [article, setArticle] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [fbContent, setFbContent] = useState('')
-  const [fbEmail, setFbEmail] = useState(user?.email ?? '')
+  const [selectedReaction, setSelectedReaction] = useState('')
+  const [fbComment, setFbComment] = useState('')
   const [fbSent, setFbSent] = useState(false)
   const [fbLoading, setFbLoading] = useState(false)
   const [fbError, setFbError] = useState('')
@@ -31,17 +33,27 @@ export default function NewsDetailPage() {
 
   async function handleFeedback(e: React.FormEvent) {
     e.preventDefault()
+    if (!selectedReaction) {
+      setFbError('Choisis une réaction')
+      return
+    }
+    if (!user || !profile?.commune_id) {
+      setFbError('Tu dois être connecté pour donner ton avis')
+      return
+    }
     setFbLoading(true)
     setFbError('')
     try {
       await submitFeedback({
         news_id: id!,
-        author_email: fbEmail,
-        content: fbContent,
+        user_id: user.id,
+        commune_id: profile.commune_id,
+        reaction: selectedReaction,
+        comment: fbComment || undefined,
       })
       setFbSent(true)
     } catch (err: any) {
-      setFbError(err.message || 'Erreur lors de l\'envoi')
+      setFbError(err.message || "Erreur lors de l'envoi")
     } finally {
       setFbLoading(false)
     }
@@ -51,23 +63,9 @@ export default function NewsDetailPage() {
   const parentTab = article ? getTabBySubcategoryId(article.category_id) : null
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Sticky header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors text-slate-600"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <Link to="/" className="font-display font-bold text-slate-900 text-sm">
-            Info Jeunes
-          </Link>
-        </div>
-      </header>
-
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Content */}
+      <div className="max-w-3xl mx-auto px-4 py-6">
         {loading ? (
           <div className="flex justify-center py-24">
             <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -82,6 +80,7 @@ export default function NewsDetailPage() {
               <img
                 src={article.image_url}
                 alt={article.title}
+                loading="lazy"
                 className="w-full h-64 sm:h-80 object-cover rounded-3xl mb-8 shadow-sm"
               />
             )}
@@ -149,10 +148,10 @@ export default function NewsDetailPage() {
             {/* Feedback form */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
               <h2 className="font-display font-bold text-lg text-slate-900 mb-1">
-                💬 Laisser un commentaire
+                Ton avis nous intéresse
               </h2>
               <p className="text-sm text-slate-500 mb-5">
-                Ton retour nous aide à améliorer nos informations.
+                Dis-nous ce que tu penses de cet article.
               </p>
 
               {fbSent ? (
@@ -165,45 +164,64 @@ export default function NewsDetailPage() {
                   <div>
                     <p className="text-green-700 font-bold text-sm">Merci pour ton retour !</p>
                     <p className="text-green-600 text-xs mt-0.5">
-                      Ton commentaire est en attente de modération.
+                      Ton avis a bien été enregistré.
                     </p>
                   </div>
                 </motion.div>
+              ) : !user ? (
+                <div className="text-center py-6">
+                  <p className="text-slate-500 text-sm mb-4">
+                    Connecte-toi pour donner ton avis.
+                  </p>
+                  <Link
+                    to="/login"
+                    className="btn-primary inline-flex items-center gap-2"
+                  >
+                    Se connecter
+                  </Link>
+                </div>
               ) : (
                 <form onSubmit={handleFeedback} className="space-y-4">
-                  <input
-                    type="email"
-                    className="input-field"
-                    placeholder="Ton email"
-                    value={fbEmail}
-                    onChange={(e) => setFbEmail(e.target.value)}
-                    required
-                  />
+                  {/* Reaction buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {REACTIONS.map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setSelectedReaction(key)}
+                        className={cn(
+                          'p-3 rounded-2xl border-2 text-sm font-medium transition-all text-center',
+                          selectedReaction === key
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Optional comment */}
                   <textarea
                     className="input-field resize-none"
-                    rows={4}
-                    placeholder="Ton commentaire..."
-                    value={fbContent}
-                    onChange={(e) => setFbContent(e.target.value)}
-                    required
+                    rows={3}
+                    placeholder="Un commentaire ? (optionnel)"
+                    value={fbComment}
+                    onChange={(e) => setFbComment(e.target.value)}
                   />
+
                   {fbError && (
                     <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100">
                       {fbError}
                     </p>
                   )}
+
                   <button
                     type="submit"
-                    disabled={fbLoading}
-                    className="btn-primary w-full"
+                    disabled={fbLoading || !selectedReaction}
+                    className="btn-primary w-full disabled:opacity-50"
                   >
-                    {fbLoading ? (
-                      'Envoi en cours...'
-                    ) : (
-                      <>
-                        Envoyer <Send size={16} />
-                      </>
-                    )}
+                    {fbLoading ? 'Envoi en cours...' : 'Envoyer mon avis'}
                   </button>
                 </form>
               )}
