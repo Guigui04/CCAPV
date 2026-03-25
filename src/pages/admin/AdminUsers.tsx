@@ -2,8 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { User, Shield, Search, ChevronDown } from 'lucide-react'
 import AdminLayout from '../../components/AdminLayout'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/Toast'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { cn, formatDate } from '../../utils'
+import { sanitizeText, isValidRole, LIMITS } from '../../lib/validate'
 
 const ROLES = [
   { value: 'user', label: 'Utilisateur', color: 'badge-gray' },
@@ -12,6 +15,7 @@ const ROLES = [
 ]
 
 export default function AdminUsers() {
+  const { profile } = useAuth()
   const toast = useToast()
   const [users, setUsers] = useState<any[]>([])
   const [total, setTotal] = useState(0)
@@ -20,7 +24,10 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [editingRole, setEditingRole] = useState<string | null>(null)
+  const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: string; newRole: string } | null>(null)
   const LIMIT = 20
+
+  const isSuperAdmin = profile?.role === 'super_admin'
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -35,7 +42,10 @@ export default function AdminUsers() {
         query = query.eq('role', roleFilter)
       }
       if (search.trim()) {
-        query = query.or(`first_name.ilike.%${search.trim()}%,last_name.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`)
+        const safeSearch = sanitizeText(search, LIMITS.SEARCH).replace(/[%_]/g, '')
+        if (safeSearch) {
+          query = query.or(`first_name.ilike.%${safeSearch}%,last_name.ilike.%${safeSearch}%,email.ilike.%${safeSearch}%`)
+        }
       }
 
       const { data, count, error } = await query
@@ -54,7 +64,28 @@ export default function AdminUsers() {
     return () => clearTimeout(timer)
   }, [load])
 
-  async function handleRoleChange(userId: string, newRole: string) {
+  function requestRoleChange(userId: string, newRole: string) {
+    if (!isSuperAdmin) {
+      toast.error('Seul un super admin peut modifier les rôles')
+      setEditingRole(null)
+      return
+    }
+    if (!isValidRole(newRole)) {
+      toast.error('Rôle invalide')
+      return
+    }
+    // Prevent self-demotion
+    if (userId === profile?.id && newRole !== 'super_admin') {
+      toast.error('Vous ne pouvez pas rétrograder votre propre compte')
+      setEditingRole(null)
+      return
+    }
+    setPendingRoleChange({ userId, newRole })
+  }
+
+  async function confirmRoleChange() {
+    if (!pendingRoleChange) return
+    const { userId, newRole } = pendingRoleChange
     try {
       const { error } = await supabase
         .from('profiles')
@@ -68,6 +99,8 @@ export default function AdminUsers() {
       toast.success('Rôle modifié')
     } catch {
       toast.error('Erreur lors de la modification du rôle')
+    } finally {
+      setPendingRoleChange(null)
     }
   }
 
@@ -149,7 +182,7 @@ export default function AdminUsers() {
                       {editingRole === u.id ? (
                         <select
                           value={u.role}
-                          onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                          onChange={(e) => requestRoleChange(u.id, e.target.value)}
                           onBlur={() => setEditingRole(null)}
                           autoFocus
                           className="input-field py-1 text-xs w-40"
@@ -159,7 +192,7 @@ export default function AdminUsers() {
                           ))}
                         </select>
                       ) : (
-                        <button onClick={() => setEditingRole(u.id)} className="hover:opacity-70 transition-opacity">
+                        <button onClick={() => isSuperAdmin && setEditingRole(u.id)} className={cn('transition-opacity', isSuperAdmin ? 'hover:opacity-70 cursor-pointer' : 'cursor-default')}>
                           {getRoleBadge(u.role)}
                         </button>
                       )}
@@ -209,7 +242,7 @@ export default function AdminUsers() {
                     {editingRole === u.id ? (
                       <select
                         value={u.role}
-                        onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                        onChange={(e) => requestRoleChange(u.id, e.target.value)}
                         onBlur={() => setEditingRole(null)}
                         autoFocus
                         className="input-field py-1 text-xs"
@@ -219,7 +252,7 @@ export default function AdminUsers() {
                         ))}
                       </select>
                     ) : (
-                      <button onClick={() => setEditingRole(u.id)} className="flex items-center gap-1">
+                      <button onClick={() => isSuperAdmin && setEditingRole(u.id)} className={cn('flex items-center gap-1', isSuperAdmin ? 'cursor-pointer' : 'cursor-default')}>
                         {getRoleBadge(u.role)}
                         <ChevronDown size={12} className="text-slate-400" />
                       </button>
@@ -257,6 +290,13 @@ export default function AdminUsers() {
           </button>
         </div>
       )}
+      <ConfirmDialog
+        open={!!pendingRoleChange}
+        title="Modifier le rôle"
+        message={`Confirmer le changement de rôle vers "${ROLES.find((r) => r.value === pendingRoleChange?.newRole)?.label ?? pendingRoleChange?.newRole}" ? Cette action modifie les permissions de l'utilisateur.`}
+        onCancel={() => { setPendingRoleChange(null); setEditingRole(null) }}
+        onConfirm={confirmRoleChange}
+      />
     </AdminLayout>
   )
 }

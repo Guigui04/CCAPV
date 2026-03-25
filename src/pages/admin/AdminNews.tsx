@@ -11,6 +11,7 @@ import { supabase } from '../../lib/supabase'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { useToast } from '../../components/Toast'
+import { validateImageFile, LIMITS } from '../../lib/validate'
 
 const EMPTY = {
   title: '',
@@ -91,18 +92,19 @@ export default function AdminNews() {
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast.warning('Seules les images sont acceptées')
+
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      toast.warning(validation.error!)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.warning('Image trop lourde (max 5 Mo)')
-      return
-    }
+
     setUploading(true)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `news/${Date.now()}.${ext}`
+      // Use crypto.randomUUID for unpredictable filenames
+      const uniqueId = crypto.randomUUID()
+      const path = `news/${uniqueId}.${validation.safeExtension}`
       const { error } = await supabase.storage.from('images').upload(path, file)
       if (error) throw error
       const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
@@ -320,6 +322,7 @@ export default function AdminNews() {
                     setForm((f: any) => ({ ...f, title: e.target.value }))
                   }
                   required
+                  maxLength={LIMITS.TITLE}
                 />
               </div>
               <div>

@@ -20,6 +20,7 @@ function getAlertType(type: string) {
 }
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import { LIMITS } from '../../lib/validate'
 
 export default function AdminAlerts() {
   const { user } = useAuth()
@@ -165,6 +166,7 @@ export default function AdminAlerts() {
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Ex: Nouvelle aide au permis disponible"
                     className="input-field"
+                    maxLength={LIMITS.ALERT_TITLE}
                   />
                 </div>
 
@@ -179,6 +181,7 @@ export default function AdminAlerts() {
                     placeholder="Détails de l'alerte..."
                     rows={4}
                     className="input-field resize-none"
+                    maxLength={LIMITS.ALERT_BODY}
                   />
                 </div>
 

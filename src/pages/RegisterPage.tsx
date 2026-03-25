@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { validatePassword, passwordStrength } from '../lib/validate'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -19,8 +20,9 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.')
+    const pwdCheck = validatePassword(password)
+    if (!pwdCheck.valid) {
+      setError(`Mot de passe trop faible : ${pwdCheck.errors.join(', ')}`)
       return
     }
 
@@ -124,25 +126,47 @@ export default function RegisterPage() {
               </div>
 
               {/* Password */}
-              <div className="bg-white rounded-2xl border border-slate-200 flex items-center gap-3 px-4 py-3.5 shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                <span className="text-slate-400 text-lg">🔒</span>
-                <input
-                  type={showPwd ? 'text' : 'password'}
-                  placeholder="Mot de passe (6 car. min)"
-                  className="flex-1 bg-transparent outline-none text-slate-800 placeholder-slate-400 text-base font-medium"
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPwd((s) => !s)}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+              <div>
+                <div className="bg-white rounded-2xl border border-slate-200 flex items-center gap-3 px-4 py-3.5 shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="text-slate-400 text-lg">🔒</span>
+                  <input
+                    type={showPwd ? 'text' : 'password'}
+                    placeholder="Mot de passe (8 car. min, maj, min, chiffre)"
+                    className="flex-1 bg-transparent outline-none text-slate-800 placeholder-slate-400 text-base font-medium"
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd((s) => !s)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {password && (
+                  <div className="flex gap-1 mt-2 px-1">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i < passwordStrength(password)
+                            ? passwordStrength(password) <= 1
+                              ? 'bg-red-400'
+                              : passwordStrength(password) <= 2
+                                ? 'bg-amber-400'
+                                : passwordStrength(password) <= 3
+                                  ? 'bg-blue-400'
+                                  : 'bg-green-500'
+                            : 'bg-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Submit */}

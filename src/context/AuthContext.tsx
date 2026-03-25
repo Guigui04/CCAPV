@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
+import { validatePassword } from '../lib/validate'
 
 interface Profile {
   id: string
@@ -30,6 +31,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
+
+// Fixed safe redirect URL (no open redirect possible)
+const SITE_URL = window.location.origin
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -77,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
+    if (error) throw new Error('Email ou mot de passe incorrect')
   }
 
   async function register(
@@ -85,13 +89,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     extra?: { first_name?: string; last_name?: string }
   ) {
+    // Enforce password complexity
+    const pwdCheck = validatePassword(password)
+    if (!pwdCheck.valid) {
+      throw new Error(`Mot de passe trop faible : ${pwdCheck.errors.join(', ')}`)
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${SITE_URL}/login`,
         data: {
-          first_name: extra?.first_name ?? '',
-          last_name: extra?.last_name ?? '',
+          first_name: extra?.first_name?.slice(0, 50) ?? '',
+          last_name: extra?.last_name?.slice(0, 50) ?? '',
         },
       },
     })
@@ -109,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.href,
+        redirectTo: `${SITE_URL}/`,
       },
     })
     if (error) throw error
@@ -117,21 +128,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function resetPassword(email: string) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${SITE_URL}/login`,
     })
     if (error) throw error
   }
 
   async function changePassword(newPassword: string) {
+    // Enforce password complexity
+    const pwdCheck = validatePassword(newPassword)
+    if (!pwdCheck.valid) {
+      throw new Error(`Mot de passe trop faible : ${pwdCheck.errors.join(', ')}`)
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) throw error
   }
 
   async function updateProfile(fields: Partial<Pick<Profile, 'first_name' | 'last_name' | 'birth_date' | 'commune_id' | 'interests'>>) {
     if (!user) throw new Error('Non connecté')
+    // Sanitize string fields
+    const sanitized: Record<string, unknown> = {}
+    if (fields.first_name !== undefined) sanitized.first_name = fields.first_name?.slice(0, 50)
+    if (fields.last_name !== undefined) sanitized.last_name = fields.last_name?.slice(0, 50)
+    if (fields.birth_date !== undefined) sanitized.birth_date = fields.birth_date
+    if (fields.commune_id !== undefined) sanitized.commune_id = fields.commune_id || null
+    if (fields.interests !== undefined) sanitized.interests = fields.interests
+
     const { error } = await supabase
       .from('profiles')
-      .update(fields)
+      .update(sanitized)
       .eq('id', user.id)
     if (error) throw error
     await fetchProfile(user.id)
@@ -139,10 +163,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function deleteAccount() {
     if (!user) throw new Error('Non connecté')
-    // Delete profile data, then sign out (full deletion requires admin/edge function)
+    // Clean up user data
+    await supabase.from('bookmarks').delete().eq('user_id', user.id)
     await supabase.from('feedback').delete().eq('user_id', user.id)
     await supabase.from('user_notification_reads').delete().eq('user_id', user.id)
-    await supabase.from('profiles').update({ is_active: false, first_name: null, last_name: null, birth_date: null }).eq('id', user.id)
+    // Anonymize profile (actual auth user deletion requires Edge Function)
+    await supabase.from('profiles').update({
+      is_active: false,
+      first_name: null,
+      last_name: null,
+      birth_date: null,
+      interests: [],
+      email: `deleted_${user.id.slice(0, 8)}@removed.local`,
+    }).eq('id', user.id)
+    // Call Edge Function for full auth deletion if available
+    try {
+      await supabase.functions.invoke('delete-user', { body: { user_id: user.id } })
+    } catch {
+      // Edge function may not be deployed yet - still proceed with sign out
+    }
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
