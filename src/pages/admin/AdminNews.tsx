@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   getAllNews,
   createNews,
@@ -7,6 +7,7 @@ import {
   togglePublished,
 } from '../../lib/newsService'
 import { TABS, getCategoryById } from '../../constants'
+import { supabase } from '../../lib/supabase'
 import AdminLayout from '../../components/AdminLayout'
 
 const EMPTY = {
@@ -26,6 +27,8 @@ export default function AdminNews() {
   const [modal, setModal] = useState<any | null | false>(false)
   const [form, setForm] = useState<any>(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const LIMIT = 20
 
   const load = useCallback(() => {
@@ -49,6 +52,14 @@ export default function AdminNews() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.title.trim()) {
+      alert('Le titre est obligatoire')
+      return
+    }
+    if (!form.content.trim()) {
+      alert('Le contenu est obligatoire')
+      return
+    }
     setSaving(true)
     try {
       const payload = {
@@ -70,6 +81,33 @@ export default function AdminNews() {
       alert(err.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('Seules les images sont acceptees')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image trop lourde (max 5 Mo)')
+      return
+    }
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `news/${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('images').upload(path, file)
+      if (error) throw error
+      const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
+      setForm((f: any) => ({ ...f, image_url: urlData.publicUrl }))
+    } catch (err: any) {
+      alert(err.message || "Erreur lors de l'upload")
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -165,8 +203,11 @@ export default function AdminNews() {
               </tbody>
             </table>
             {articles.length === 0 && (
-              <div className="text-center py-12 text-slate-400">
-                Aucun article
+              <div className="text-center py-12">
+                <p className="text-slate-400 mb-3">Aucun article</p>
+                <button onClick={() => openModal(null)} className="btn-primary text-sm">
+                  + Creer le premier article
+                </button>
               </div>
             )}
           </div>
@@ -333,16 +374,53 @@ export default function AdminNews() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  URL image
+                  Image
                 </label>
-                <input
-                  className="input-field"
-                  type="url"
-                  value={form.image_url}
-                  onChange={(e) =>
-                    setForm((f: any) => ({ ...f, image_url: e.target.value }))
-                  }
-                />
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      className="input-field flex-1"
+                      type="url"
+                      placeholder="URL de l'image ou uploader ci-dessous"
+                      value={form.image_url}
+                      onChange={(e) =>
+                        setForm((f: any) => ({ ...f, image_url: e.target.value }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="btn-secondary text-sm whitespace-nowrap"
+                    >
+                      {uploading ? 'Upload...' : 'Uploader'}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  {form.image_url && (
+                    <div className="relative">
+                      <img
+                        src={form.image_url}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-xl border border-slate-200"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f: any) => ({ ...f, image_url: '' }))}
+                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

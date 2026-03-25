@@ -169,6 +169,7 @@ export default function ExplorerPage() {
                       <img
                         src={a.image_url}
                         alt={a.title}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
