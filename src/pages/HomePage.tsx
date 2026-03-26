@@ -6,6 +6,7 @@ import { ArrowRight, Calendar, ChevronDown, Clock, Sparkles } from 'lucide-react
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { cn, formatDate } from '../utils'
+import SEOHead from '../components/SEOHead'
 
 export default function HomePage() {
   const { profile } = useAuth()
@@ -64,6 +65,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8 pb-8">
+      <SEOHead />
       {/* Hero featured article */}
       <section>
         <div className="flex items-center justify-between mb-4">

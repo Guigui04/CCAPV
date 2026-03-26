@@ -4,11 +4,13 @@ import { useAuth } from '../context/AuthContext'
 export default function ProtectedRoute({
   children,
   requireAdmin = false,
+  requireSuperAdmin = false,
 }: {
   children: React.ReactNode
   requireAdmin?: boolean
+  requireSuperAdmin?: boolean
 }) {
-  const { user, isAdmin, loading } = useAuth()
+  const { user, isAdmin, isSuperAdmin, loading } = useAuth()
 
   if (loading) {
     return (
@@ -19,6 +21,7 @@ export default function ProtectedRoute({
   }
 
   if (!user) return <Navigate to="/login" replace />
+  if (requireSuperAdmin && !isSuperAdmin) return <Navigate to="/" replace />
   if (requireAdmin && !isAdmin) return <Navigate to="/" replace />
 
   return <>{children}</>

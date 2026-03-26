@@ -1,21 +1,27 @@
 import { type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FileText, MessageSquare, Megaphone, Users, ArrowLeft, LogOut } from 'lucide-react'
+import { LayoutDashboard, FileText, MessageSquare, Megaphone, Users, Building2, BarChart3, ArrowLeft, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../utils'
 
-const ADMIN_NAV = [
+const BASE_NAV = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/news', label: 'Articles', icon: FileText },
   { to: '/admin/feedback', label: 'Feedbacks', icon: MessageSquare },
   { to: '/admin/alerts', label: 'Alertes', icon: Megaphone },
   { to: '/admin/users', label: 'Utilisateurs', icon: Users },
+  { to: '/admin/analytics', label: 'Stats', icon: BarChart3 },
+]
+
+const SUPER_ADMIN_NAV = [
+  { to: '/admin/communes', label: 'Communes', icon: Building2 },
 ]
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { logout } = useAuth()
+  const { logout, isSuperAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const ADMIN_NAV = isSuperAdmin ? [...BASE_NAV, ...SUPER_ADMIN_NAV] : BASE_NAV
 
   function isActive(to: string) {
     return to === '/admin'

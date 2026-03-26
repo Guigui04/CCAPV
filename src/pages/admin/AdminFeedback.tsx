@@ -5,12 +5,14 @@ import {
   deleteFeedback,
 } from '../../lib/feedbackService'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import { REACTION_LABELS, FEEDBACK_STATUS_LABELS } from '../../constants'
 import { User } from 'lucide-react'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
 
 export default function AdminFeedback() {
+  const { isSuperAdmin, communeId } = useAuth()
   const [feedbacks, setFeedbacks] = useState<any[]>([])
   const [authors, setAuthors] = useState<Record<string, { first_name?: string; last_name?: string; email?: string }>>({})
   const [total, setTotal] = useState(0)
@@ -22,7 +24,7 @@ export default function AdminFeedback() {
 
   const load = useCallback(() => {
     setLoading(true)
-    getFeedbacks({ status: status || undefined, page, limit: LIMIT })
+    getFeedbacks({ status: status || undefined, page, limit: LIMIT, communeId: isSuperAdmin ? undefined : communeId })
       .then(async ({ data, count }) => {
         setFeedbacks(data)
         setTotal(count)
@@ -43,7 +45,7 @@ export default function AdminFeedback() {
         }
       })
       .finally(() => setLoading(false))
-  }, [status, page])
+  }, [status, page, isSuperAdmin, communeId])
 
   useEffect(() => {
     load()

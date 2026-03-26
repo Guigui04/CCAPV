@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { formatDate, cn } from '../utils'
 import { isValidSafeUrl, LIMITS } from '../lib/validate'
+import { trackView } from '../lib/analyticsService'
+import SEOHead from '../components/SEOHead'
 import MarkdownContent from '../components/MarkdownContent'
 
 const REACTIONS = Object.entries(REACTION_LABELS)
@@ -36,8 +38,13 @@ export default function NewsDetailPage() {
       setNotFound(false)
       getNewsById(id)
         .then((data) => {
-          if (data) setArticle(data)
-          else setNotFound(true)
+          if (data) {
+            setArticle(data)
+            // Fire-and-forget view tracking
+            trackView(id, profile?.commune_id, user?.id)
+          } else {
+            setNotFound(true)
+          }
         })
         .catch(() => setNotFound(true))
         .finally(() => setLoading(false))
@@ -161,6 +168,12 @@ export default function NewsDetailPage() {
                 </span>
               )}
             </div>
+
+            <SEOHead
+              title={article.title}
+              description={article.summary || undefined}
+              image={article.image_url || undefined}
+            />
 
             {/* Title */}
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 leading-tight">

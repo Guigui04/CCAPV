@@ -23,7 +23,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import { LIMITS } from '../../lib/validate'
 
 export default function AdminAlerts() {
-  const { user } = useAuth()
+  const { user, isSuperAdmin, communeId } = useAuth()
   const [notifications, setNotifications] = useState<any[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -43,13 +43,13 @@ export default function AdminAlerts() {
 
   const load = useCallback(() => {
     setLoading(true)
-    getAllNotifications({ page, limit: LIMIT })
+    getAllNotifications({ page, limit: LIMIT, communeId: isSuperAdmin ? undefined : communeId })
       .then(({ data, count }) => {
         setNotifications(data)
         setTotal(count)
       })
       .finally(() => setLoading(false))
-  }, [page])
+  }, [page, isSuperAdmin, communeId])
 
   useEffect(() => {
     load()
@@ -104,6 +104,7 @@ export default function AdminAlerts() {
           body: body.trim(),
           type: alertType,
           sent_by: user?.id,
+          commune_id: isSuperAdmin ? undefined : communeId ?? undefined,
         })
       }
       closeForm()

@@ -59,15 +59,21 @@ export async function getPublishedNews({
 export async function getAllNews({
   page = 1,
   limit = 20,
-}: { page?: number; limit?: number } = {}) {
+  communeId,
+}: { page?: number; limit?: number; communeId?: string | null } = {}) {
   const safeLimit = Math.min(Math.max(1, limit), 100)
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from('news')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range((page - 1) * safeLimit, page * safeLimit - 1)
 
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { data, error, count } = await query
   if (error) throw error
   return { data: data ?? [], count: count ?? 0 }
 }
@@ -79,7 +85,7 @@ export async function getNewsById(id: string) {
   return data
 }
 
-export async function createNews(payload: Record<string, unknown>) {
+export async function createNews(payload: Record<string, unknown>, communeId?: string | null) {
   // Sanitize fields
   const safe: Record<string, unknown> = {
     title: sanitizeText(String(payload.title ?? ''), LIMITS.TITLE),
@@ -90,6 +96,9 @@ export async function createNews(payload: Record<string, unknown>) {
   }
   if (payload.image_url && typeof payload.image_url === 'string') {
     safe.image_url = isValidSafeUrl(payload.image_url) ? payload.image_url : ''
+  }
+  if (communeId) {
+    safe.commune_id = communeId
   }
 
   const { data, error } = await supabase.from('news').insert([safe]).select().single()

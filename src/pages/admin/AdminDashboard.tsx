@@ -1,24 +1,33 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import AdminLayout from '../../components/AdminLayout'
 
 export default function AdminDashboard() {
+  const { isSuperAdmin, communeId } = useAuth()
   const [stats, setStats] = useState({ articles: 0, pending: 0, total_feedbacks: 0, alerts: 0, users: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
+        let newsQ = supabase.from('news').select('*', { count: 'exact', head: true })
+        let pendingQ = supabase.from('feedback').select('*', { count: 'exact', head: true }).eq('status', 'new')
+        let totalFbQ = supabase.from('feedback').select('*', { count: 'exact', head: true })
+        let alertsQ = supabase.from('notifications').select('*', { count: 'exact', head: true })
+        let usersQ = supabase.from('profiles').select('*', { count: 'exact', head: true })
+
+        if (!isSuperAdmin && communeId) {
+          newsQ = newsQ.eq('commune_id', communeId)
+          pendingQ = pendingQ.eq('commune_id', communeId)
+          totalFbQ = totalFbQ.eq('commune_id', communeId)
+          alertsQ = alertsQ.or(`commune_id.eq.${communeId},commune_id.is.null`)
+          usersQ = usersQ.eq('commune_id', communeId)
+        }
+
         const [articlesRes, pendingRes, totalFbRes, alertsRes, usersRes] = await Promise.all([
-          supabase.from('news').select('*', { count: 'exact', head: true }),
-          supabase
-            .from('feedback')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'new'),
-          supabase.from('feedback').select('*', { count: 'exact', head: true }),
-          supabase.from('notifications').select('*', { count: 'exact', head: true }),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          newsQ, pendingQ, totalFbQ, alertsQ, usersQ,
         ])
         setStats({
           articles: articlesRes.count ?? 0,
@@ -34,7 +43,7 @@ export default function AdminDashboard() {
       }
     }
     load()
-  }, [])
+  }, [isSuperAdmin, communeId])
 
   const cards = [
     {

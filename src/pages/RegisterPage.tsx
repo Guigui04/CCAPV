@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
+  const [acceptCGU, setAcceptCGU] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -19,6 +20,11 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!acceptCGU) {
+      setError('Tu dois accepter les CGU pour continuer')
+      return
+    }
 
     const pwdCheck = validatePassword(password)
     if (!pwdCheck.valid) {
@@ -168,6 +174,26 @@ export default function RegisterPage() {
                   </div>
                 )}
               </div>
+
+              {/* CGU acceptance */}
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptCGU}
+                  onChange={(e) => setAcceptCGU(e.target.checked)}
+                  className="w-4 h-4 accent-indigo-600 rounded mt-0.5 shrink-0"
+                />
+                <span className="text-xs text-slate-500 leading-relaxed">
+                  J'accepte les{' '}
+                  <Link to="/cgu" className="text-indigo-600 font-medium hover:underline" target="_blank">
+                    Conditions Générales d'Utilisation
+                  </Link>{' '}
+                  et la{' '}
+                  <Link to="/confidentialite" className="text-indigo-600 font-medium hover:underline" target="_blank">
+                    Politique de confidentialité
+                  </Link>
+                </span>
+              </label>
 
               {/* Submit */}
               <button

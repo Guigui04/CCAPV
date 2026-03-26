@@ -8,10 +8,12 @@ import {
 } from '../../lib/newsService'
 import { TABS, getCategoryById } from '../../constants'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { useToast } from '../../components/Toast'
 import { validateImageFile, LIMITS } from '../../lib/validate'
+import { exportToCSV } from '../../lib/exportService'
 
 const EMPTY = {
   title: '',
@@ -23,6 +25,7 @@ const EMPTY = {
 }
 
 export default function AdminNews() {
+  const { isSuperAdmin, communeId } = useAuth()
   const toast = useToast()
   const [articles, setArticles] = useState<any[]>([])
   const [total, setTotal] = useState(0)
@@ -38,13 +41,13 @@ export default function AdminNews() {
 
   const load = useCallback(() => {
     setLoading(true)
-    getAllNews({ page, limit: LIMIT })
+    getAllNews({ page, limit: LIMIT, communeId: isSuperAdmin ? undefined : communeId })
       .then(({ data, count }) => {
         setArticles(data)
         setTotal(count)
       })
       .finally(() => setLoading(false))
-  }, [page])
+  }, [page, isSuperAdmin, communeId])
 
   useEffect(() => {
     load()
@@ -78,7 +81,7 @@ export default function AdminNews() {
       if (modal?.id) {
         await updateNews(modal.id, payload)
       } else {
-        await createNews(payload)
+        await createNews(payload, communeId)
       }
       setModal(false)
       load()
@@ -121,13 +124,27 @@ export default function AdminNews() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h2 className="font-display font-bold text-xl lg:text-2xl text-slate-900">
           Articles ({total})
         </h2>
-        <button onClick={() => openModal(null)} className="btn-primary text-sm">
-          + Nouvel article
-        </button>
+        <div className="flex items-center gap-2">
+          {articles.length > 0 && (
+            <button
+              onClick={() => exportToCSV(
+                articles.map((a) => ({ titre: a.title, categorie: a.category_id, statut: a.status, date: new Date(a.created_at).toLocaleDateString('fr-FR') })),
+                'articles',
+                [{ key: 'titre', label: 'Titre' }, { key: 'categorie', label: 'Catégorie' }, { key: 'statut', label: 'Statut' }, { key: 'date', label: 'Date' }]
+              )}
+              className="btn-secondary btn-sm text-xs"
+            >
+              Export CSV
+            </button>
+          )}
+          <button onClick={() => openModal(null)} className="btn-primary text-sm">
+            + Nouvel article
+          </button>
+        </div>
       </div>
 
       {loading ? (

@@ -4,6 +4,7 @@ import { Home, Search, Bell, Bookmark, User, LayoutDashboard } from 'lucide-reac
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../utils'
 import { motion, AnimatePresence } from 'framer-motion'
+import Footer from './Footer'
 
 interface LayoutProps {
   children: ReactNode
@@ -71,6 +72,8 @@ export default function Layout({ children }: LayoutProps) {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <Footer />
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-200 px-4 py-2.5 z-50 safe-area-inset-bottom">

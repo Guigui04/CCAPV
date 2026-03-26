@@ -27,7 +27,7 @@ export default function AdminUsers() {
   const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: string; newRole: string } | null>(null)
   const LIMIT = 20
 
-  const isSuperAdmin = profile?.role === 'super_admin'
+  const { isSuperAdmin, communeId } = useAuth()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -38,6 +38,9 @@ export default function AdminUsers() {
         .order('created_at', { ascending: false })
         .range((page - 1) * LIMIT, page * LIMIT - 1)
 
+      if (!isSuperAdmin && communeId) {
+        query = query.eq('commune_id', communeId)
+      }
       if (roleFilter) {
         query = query.eq('role', roleFilter)
       }
@@ -57,7 +60,7 @@ export default function AdminUsers() {
     } finally {
       setLoading(false)
     }
-  }, [page, roleFilter, search])
+  }, [page, roleFilter, search, isSuperAdmin, communeId])
 
   useEffect(() => {
     const timer = setTimeout(load, search ? 300 : 0)
