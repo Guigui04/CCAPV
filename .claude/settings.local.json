@@ -37,7 +37,12 @@
       "Bash(git pull:*)",
       "Bash(xargs grep:*)",
       "Bash(grep -r 'create table' /c/Users/guill/Documents/CCAPV/.claude/worktrees/hardcore-elion --include=*.sql --include=*.md --include=*.txt)",
-      "Bash(grep -r \"notifications\\\\|user_notification_reads\" /c/Users/guill/Documents/CCAPV/.claude/worktrees/hardcore-elion/src --include=*.ts --include=*.tsx)"
+      "Bash(grep -r \"notifications\\\\|user_notification_reads\" /c/Users/guill/Documents/CCAPV/.claude/worktrees/hardcore-elion/src --include=*.ts --include=*.tsx)",
+      "Bash(find /c/Users/guill/Documents/CCAPV/.claude/worktrees/hardcore-elion/supabase -type f -name *.sql)",
+      "Bash(npm install:*)",
+      "Bash(ls \"C:\\\\Users\\\\guill\\\\Documents\\\\CCAPV\\\\.claude\\\\worktrees\\\\hardcore-elion\\\\supabase\\\\migrations\"\" 2>/dev/null; ls \"C:UsersguillDocumentsCCAPV.claudeworktreeshardcore-elionsrclibvalidate.ts\" 2>/dev/null || echo \"no validate.ts \")",
+      "mcp__9f3e2f59-0ff0-4d83-8838-5e551f49dfe0__deploy_edge_function",
+      "Bash(node -e \":*)"
     ]
   }
 }

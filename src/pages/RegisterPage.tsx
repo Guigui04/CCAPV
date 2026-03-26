@@ -26,6 +26,7 @@ export default function RegisterPage() {
       return
     }
 
+
     const pwdCheck = validatePassword(password)
     if (!pwdCheck.valid) {
       setError(`Mot de passe trop faible : ${pwdCheck.errors.join(', ')}`)
