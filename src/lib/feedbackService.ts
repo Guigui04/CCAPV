@@ -5,7 +5,8 @@ export async function getFeedbacks({
   status,
   page = 1,
   limit = 20,
-}: { status?: string; page?: number; limit?: number } = {}) {
+  communeId,
+}: { status?: string; page?: number; limit?: number; communeId?: string | null } = {}) {
   let query = supabase
     .from('feedback')
     .select('*, news(title)', { count: 'exact' })
@@ -13,6 +14,7 @@ export async function getFeedbacks({
     .range((page - 1) * limit, page * limit - 1)
 
   if (status) query = query.eq('status', status)
+  if (communeId) query = query.eq('commune_id', communeId)
 
   const { data, error, count } = await query
   if (error) throw error

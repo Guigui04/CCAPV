@@ -60,13 +60,20 @@ export async function markAllNotificationsRead(userId: string, notificationIds: 
 export async function getAllNotifications({
   page = 1,
   limit = 20,
-}: { page?: number; limit?: number } = {}) {
+  communeId,
+}: { page?: number; limit?: number; communeId?: string | null } = {}) {
   const safeLimit = Math.min(Math.max(1, limit), 100)
-  const { data, error, count } = await supabase
+  let query = supabase
     .from('notifications')
     .select('*', { count: 'exact' })
     .order('sent_at', { ascending: false })
     .range((page - 1) * safeLimit, page * safeLimit - 1)
+
+  if (communeId) {
+    query = query.or(`commune_id.eq.${communeId},commune_id.is.null`)
+  }
+
+  const { data, error, count } = await query
   if (error) throw error
   return { data: data ?? [], count: count ?? 0 }
 }

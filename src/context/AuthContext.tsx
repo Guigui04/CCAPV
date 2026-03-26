@@ -20,6 +20,8 @@ interface AuthContextType {
   profile: Profile | null
   loading: boolean
   isAdmin: boolean
+  isSuperAdmin: boolean
+  communeId: string | null
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, extra?: { first_name?: string; last_name?: string }) => Promise<void>
   logout: () => Promise<void>
@@ -188,10 +190,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const isAdmin = profile?.role === 'super_admin' || profile?.role === 'commune_admin'
+  const isSuperAdmin = profile?.role === 'super_admin'
+  const communeId = profile?.commune_id ?? null
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, isAdmin, login, register, logout, loginWithGoogle, resetPassword, changePassword, updateProfile, deleteAccount }}
+      value={{ user, profile, loading, isAdmin, isSuperAdmin, communeId, login, register, logout, loginWithGoogle, resetPassword, changePassword, updateProfile, deleteAccount }}
     >
       {children}
     </AuthContext.Provider>
