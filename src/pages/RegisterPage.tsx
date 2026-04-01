@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, UserPlus, Building2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { validatePassword, passwordStrength } from '../lib/validate'
+import { getAllCommunesSimple } from '../lib/communeService'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -11,21 +12,35 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [communeId, setCommuneId] = useState('')
+  const [communes, setCommunes] = useState<{ id: string; name: string }[]>([])
+  const [communesLoading, setCommunesLoading] = useState(true)
   const [showPwd, setShowPwd] = useState(false)
   const [acceptCGU, setAcceptCGU] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    getAllCommunesSimple()
+      .then(setCommunes)
+      .catch(() => setCommunes([]))
+      .finally(() => setCommunesLoading(false))
+  }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!communeId) {
+      setError('Tu dois sélectionner ton intercommunalité')
+      return
+    }
 
     if (!acceptCGU) {
       setError('Tu dois accepter les CGU pour continuer')
       return
     }
-
 
     const pwdCheck = validatePassword(password)
     if (!pwdCheck.valid) {
@@ -35,7 +50,7 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      await register(email, password, { first_name: firstName, last_name: lastName })
+      await register(email, password, { first_name: firstName, last_name: lastName, commune_id: communeId })
       setSuccess(true)
     } catch (err: any) {
       setError(err.message || "Erreur lors de l'inscription")
@@ -175,6 +190,32 @@ export default function RegisterPage() {
                   </div>
                 )}
               </div>
+
+              {/* Commune selector */}
+              <div className="bg-white rounded-2xl border border-slate-200 flex items-center gap-3 px-4 py-3.5 shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                <Building2 size={18} className="text-slate-400 shrink-0" />
+                <select
+                  value={communeId}
+                  onChange={(e) => setCommuneId(e.target.value)}
+                  required
+                  disabled={communesLoading}
+                  className="flex-1 bg-transparent outline-none text-slate-800 text-base font-medium appearance-none cursor-pointer disabled:opacity-50"
+                >
+                  <option value="">
+                    {communesLoading ? 'Chargement...' : 'Ton intercommunalité'}
+                  </option>
+                  {communes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {communes.length === 0 && !communesLoading && (
+                <p className="text-xs text-amber-600 px-1 -mt-2">
+                  Aucune intercommunalité disponible pour le moment. Contacte un administrateur.
+                </p>
+              )}
 
               {/* CGU acceptance */}
               <label className="flex items-start gap-2.5 cursor-pointer">
