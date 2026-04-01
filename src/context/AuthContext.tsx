@@ -22,8 +22,10 @@ interface AuthContextType {
   isAdmin: boolean
   isSuperAdmin: boolean
   communeId: string | null
+  communeName: string | null
+  needsCommuneSelection: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, extra?: { first_name?: string; last_name?: string }) => Promise<void>
+  register: (email: string, password: string, extra?: { first_name?: string; last_name?: string; commune_id?: string }) => Promise<void>
   logout: () => Promise<void>
   loginWithGoogle: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
@@ -40,6 +42,7 @@ const SITE_URL = window.location.origin
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [communeName, setCommuneName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   async function fetchProfile(userId: string) {
@@ -50,9 +53,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .single()
       setProfile(data)
+
+      // Fetch commune name if user has a commune_id
+      if (data?.commune_id) {
+        const { data: commune } = await supabase
+          .from('communes')
+          .select('name')
+          .eq('id', data.commune_id)
+          .single()
+        setCommuneName(commune?.name ?? null)
+      } else {
+        setCommuneName(null)
+      }
     } catch {
       // Profile might not exist yet
       setProfile(null)
+      setCommuneName(null)
     }
   }
 
@@ -89,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function register(
     email: string,
     password: string,
-    extra?: { first_name?: string; last_name?: string }
+    extra?: { first_name?: string; last_name?: string; commune_id?: string }
   ) {
     // Enforce password complexity
     const pwdCheck = validatePassword(password)
@@ -97,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(`Mot de passe trop faible : ${pwdCheck.errors.join(', ')}`)
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -105,10 +121,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           first_name: extra?.first_name?.slice(0, 50) ?? '',
           last_name: extra?.last_name?.slice(0, 50) ?? '',
+          commune_id: extra?.commune_id ?? null,
         },
       },
     })
     if (error) throw error
+
+    // Update profile with commune_id after signup if provided
+    if (extra?.commune_id && signUpData?.user?.id) {
+      await supabase
+        .from('profiles')
+        .update({ commune_id: extra.commune_id })
+        .eq('id', signUpData.user.id)
+    }
   }
 
   async function logout() {
@@ -192,10 +217,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === 'super_admin' || profile?.role === 'commune_admin'
   const isSuperAdmin = profile?.role === 'super_admin'
   const communeId = profile?.commune_id ?? null
+  // Users need commune selection if they're logged in, have a profile, but no commune_id
+  // super_admin is exempt (they manage all communes)
+  const needsCommuneSelection = !loading && !!user && !!profile && !profile.commune_id && profile.role !== 'super_admin'
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, isAdmin, isSuperAdmin, communeId, login, register, logout, loginWithGoogle, resetPassword, changePassword, updateProfile, deleteAccount }}
+      value={{ user, profile, loading, isAdmin, isSuperAdmin, communeId, communeName, needsCommuneSelection, login, register, logout, loginWithGoogle, resetPassword, changePassword, updateProfile, deleteAccount }}
     >
       {children}
     </AuthContext.Provider>
