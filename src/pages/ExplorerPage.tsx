@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getPublishedNews, type SortOption } from '../lib/newsService'
 import { TABS, getCategoryById } from '../constants'
 import { cn, formatDate } from '../utils'
+import { useAuth } from '../context/AuthContext'
 
 export default function ExplorerPage() {
+  const { communeId } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
   const [selectedSub, setSelectedSub] = useState<string | null>(null)
@@ -25,6 +27,7 @@ export default function ExplorerPage() {
       search: searchTerm || undefined,
       sort: sortBy,
       limit: 50,
+      communeId,
     })
       .then(({ data, count }) => {
         setResults(data)
@@ -32,7 +35,7 @@ export default function ExplorerPage() {
       })
       .catch(() => setError('Impossible de charger les resultats.'))
       .finally(() => setLoading(false))
-  }, [searchTerm, selectedTab, selectedSub, sortBy])
+  }, [searchTerm, selectedTab, selectedSub, sortBy, communeId])
 
   useEffect(() => {
     const timeout = setTimeout(doSearch, 300)

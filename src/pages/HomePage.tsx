@@ -9,7 +9,7 @@ import { cn, formatDate } from '../utils'
 import SEOHead from '../components/SEOHead'
 
 export default function HomePage() {
-  const { profile } = useAuth()
+  const { profile, communeId } = useAuth()
   const [articles, setArticles] = useState<any[]>([])
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
   const [selectedSub, setSelectedSub] = useState<string | null>(null)
@@ -24,7 +24,7 @@ export default function HomePage() {
     const categoryFilter = selectedSub || undefined
     const tabFilter = !selectedSub && selectedTab ? selectedTab : undefined
 
-    getPublishedNews({ category: categoryFilter, tab: tabFilter, limit: 20 })
+    getPublishedNews({ category: categoryFilter, tab: tabFilter, limit: 20, communeId })
       .then(({ data }) => {
         // If user has interests and no filter active, sort to prioritize matching articles
         if (interests.length > 0 && !categoryFilter && !tabFilter) {
@@ -42,7 +42,7 @@ export default function HomePage() {
       })
       .catch(() => setError('Impossible de charger les articles. Verifie ta connexion.'))
       .finally(() => setLoading(false))
-  }, [selectedTab, selectedSub, interests.join(',')])
+  }, [selectedTab, selectedSub, interests.join(','), communeId])
 
   const featured = articles[0]
   const rest = articles.slice(1)

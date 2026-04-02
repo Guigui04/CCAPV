@@ -11,6 +11,7 @@ export async function getPublishedNews({
   limit = 12,
   search,
   sort = 'recent',
+  communeId,
 }: {
   category?: string
   tab?: string
@@ -18,6 +19,7 @@ export async function getPublishedNews({
   limit?: number
   search?: string
   sort?: SortOption
+  communeId?: string | null
 } = {}) {
   // Clamp limit to prevent abuse
   const safeLimit = Math.min(Math.max(1, limit), 50)
@@ -26,6 +28,11 @@ export async function getPublishedNews({
     .from('news')
     .select('*', { count: 'exact' })
     .eq('status', 'published')
+
+  // Multi-tenant filter: show articles from user's CC + global articles (commune_id is null)
+  if (communeId) {
+    query = query.or(`commune_id.eq.${communeId},commune_id.is.null`)
+  }
 
   if (sort === 'recent') query = query.order('created_at', { ascending: false })
   else if (sort === 'oldest') query = query.order('created_at', { ascending: true })
