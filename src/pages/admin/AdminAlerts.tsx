@@ -97,7 +97,7 @@ export default function AdminAlerts() {
           title: title.trim(),
           body: body.trim(),
           type: alertType,
-        })
+        }, isSuperAdmin ? undefined : communeId)
       } else {
         await createNotification({
           title: title.trim(),
@@ -344,7 +344,7 @@ export default function AdminAlerts() {
         message="Cette alerte sera supprimée définitivement."
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {
-          if (deleteId) deleteNotification(deleteId).then(load)
+          if (deleteId) deleteNotification(deleteId, isSuperAdmin ? undefined : communeId).then(load)
           setDeleteId(null)
         }}
       />

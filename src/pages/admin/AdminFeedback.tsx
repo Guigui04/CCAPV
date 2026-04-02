@@ -154,7 +154,7 @@ export default function AdminFeedback() {
                 {f.status === 'new' && (
                   <button
                     onClick={() =>
-                      updateFeedbackStatus(f.id, 'processed').then(load)
+                      updateFeedbackStatus(f.id, 'processed', isSuperAdmin ? undefined : communeId).then(load)
                     }
                     className="btn-secondary btn-sm text-xs text-green-700"
                   >
@@ -164,7 +164,7 @@ export default function AdminFeedback() {
                 {f.status !== 'archived' && (
                   <button
                     onClick={() =>
-                      updateFeedbackStatus(f.id, 'archived').then(load)
+                      updateFeedbackStatus(f.id, 'archived', isSuperAdmin ? undefined : communeId).then(load)
                     }
                     className="btn-secondary btn-sm text-xs text-slate-600"
                   >
@@ -211,7 +211,7 @@ export default function AdminFeedback() {
         message="Cette action est irreversible."
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {
-          if (deleteId) deleteFeedback(deleteId).then(load)
+          if (deleteId) deleteFeedback(deleteId, isSuperAdmin ? undefined : communeId).then(load)
           setDeleteId(null)
         }}
       />

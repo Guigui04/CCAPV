@@ -113,7 +113,7 @@ export async function createNews(payload: Record<string, unknown>, communeId?: s
   return data
 }
 
-export async function updateNews(id: string, payload: Record<string, unknown>) {
+export async function updateNews(id: string, payload: Record<string, unknown>, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
 
   const safe: Record<string, unknown> = {}
@@ -127,23 +127,36 @@ export async function updateNews(id: string, payload: Record<string, unknown>) {
     safe.image_url = url && isValidSafeUrl(url) ? url : ''
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('news')
     .update(safe)
     .eq('id', id)
-    .select()
-    .single()
+
+  // Ownership check: commune_admin can only update their own CC's articles
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { data, error } = await query.select().single()
   if (error) throw error
   return data
 }
 
-export async function deleteNews(id: string) {
+export async function deleteNews(id: string, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
-  const { error } = await supabase.from('news').delete().eq('id', id)
+
+  let query = supabase.from('news').delete().eq('id', id)
+
+  // Ownership check: commune_admin can only delete their own CC's articles
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { error } = await query
   if (error) throw error
 }
 
-export async function togglePublished(id: string, currentStatus: string) {
+export async function togglePublished(id: string, currentStatus: string, communeId?: string | null) {
   const newStatus = currentStatus === 'published' ? 'draft' : 'published'
-  return updateNews(id, { status: newStatus })
+  return updateNews(id, { status: newStatus }, communeId)
 }

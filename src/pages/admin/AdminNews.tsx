@@ -79,7 +79,7 @@ export default function AdminNews() {
         status: form.status,
       }
       if (modal?.id) {
-        await updateNews(modal.id, payload)
+        await updateNews(modal.id, payload, isSuperAdmin ? undefined : communeId)
       } else {
         await createNews(payload, communeId)
       }
@@ -186,7 +186,7 @@ export default function AdminNews() {
                       <td className="px-4 py-3">
                         <button
                           onClick={() =>
-                            togglePublished(a.id, a.status).then(load)
+                            togglePublished(a.id, a.status, isSuperAdmin ? undefined : communeId).then(load)
                           }
                         >
                           <span
@@ -248,7 +248,7 @@ export default function AdminNews() {
                       {a.title}
                     </h3>
                     <button
-                      onClick={() => togglePublished(a.id, a.status).then(load)}
+                      onClick={() => togglePublished(a.id, a.status, isSuperAdmin ? undefined : communeId).then(load)}
                       className="shrink-0"
                     >
                       <span
@@ -479,7 +479,7 @@ export default function AdminNews() {
         message="Cette action est irreversible. L'article sera definitivement supprime."
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {
-          if (deleteId) deleteNews(deleteId).then(load)
+          if (deleteId) deleteNews(deleteId, isSuperAdmin ? undefined : communeId).then(load)
           setDeleteId(null)
         }}
       />

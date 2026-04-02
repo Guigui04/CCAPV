@@ -21,24 +21,37 @@ export async function getFeedbacks({
   return { data: data ?? [], count: count ?? 0 }
 }
 
-export async function updateFeedbackStatus(id: string, status: string) {
+export async function updateFeedbackStatus(id: string, status: string, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
   const validStatuses = ['new', 'reviewed', 'archived']
   if (!validStatuses.includes(status)) throw new Error('Statut invalide')
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('feedback')
     .update({ status })
     .eq('id', id)
-    .select()
-    .single()
+
+  // Ownership check: commune_admin can only update their own CC's feedbacks
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { data, error } = await query.select().single()
   if (error) throw error
   return data
 }
 
-export async function deleteFeedback(id: string) {
+export async function deleteFeedback(id: string, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
-  const { error } = await supabase.from('feedback').delete().eq('id', id)
+
+  let query = supabase.from('feedback').delete().eq('id', id)
+
+  // Ownership check: commune_admin can only delete their own CC's feedbacks
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { error } = await query
   if (error) throw error
 }
 
