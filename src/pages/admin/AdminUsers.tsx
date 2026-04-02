@@ -5,6 +5,7 @@ import AdminLayout from '../../components/AdminLayout'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/Toast'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import CommuneFilter from '../../components/CommuneFilter'
 import { cn, formatDate } from '../../utils'
 import { sanitizeText, isValidRole, LIMITS } from '../../lib/validate'
 
@@ -25,6 +26,7 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState('')
   const [editingRole, setEditingRole] = useState<string | null>(null)
   const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: string; newRole: string } | null>(null)
+  const [filterCommuneId, setFilterCommuneId] = useState('')
   const LIMIT = 20
 
   const { isSuperAdmin, communeId } = useAuth()
@@ -38,7 +40,9 @@ export default function AdminUsers() {
         .order('created_at', { ascending: false })
         .range((page - 1) * LIMIT, page * LIMIT - 1)
 
-      if (!isSuperAdmin && communeId) {
+      if (isSuperAdmin && filterCommuneId) {
+        query = query.eq('commune_id', filterCommuneId)
+      } else if (!isSuperAdmin && communeId) {
         query = query.eq('commune_id', communeId)
       }
       if (roleFilter) {
@@ -60,7 +64,7 @@ export default function AdminUsers() {
     } finally {
       setLoading(false)
     }
-  }, [page, roleFilter, search, isSuperAdmin, communeId])
+  }, [page, roleFilter, search, isSuperAdmin, communeId, filterCommuneId])
 
   useEffect(() => {
     const timer = setTimeout(load, search ? 300 : 0)
@@ -125,6 +129,9 @@ export default function AdminUsers() {
         <h2 className="font-display font-bold text-xl lg:text-2xl text-slate-900">
           Utilisateurs ({total})
         </h2>
+        {isSuperAdmin && (
+          <CommuneFilter value={filterCommuneId} onChange={(v) => { setFilterCommuneId(v); setPage(1) }} />
+        )}
       </div>
 
       {/* Search + Filter */}

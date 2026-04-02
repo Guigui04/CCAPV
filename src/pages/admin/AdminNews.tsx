@@ -11,6 +11,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import CommuneFilter from '../../components/CommuneFilter'
 import { useToast } from '../../components/Toast'
 import { validateImageFile, LIMITS } from '../../lib/validate'
 import { exportToCSV } from '../../lib/exportService'
@@ -37,17 +38,20 @@ export default function AdminNews() {
   const [uploading, setUploading] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [filterCommuneId, setFilterCommuneId] = useState('')
   const LIMIT = 20
 
   const load = useCallback(() => {
     setLoading(true)
-    getAllNews({ page, limit: LIMIT, communeId: isSuperAdmin ? undefined : communeId })
+    // super_admin can filter by CC; commune_admin always sees own CC
+    const effectiveCommuneId = isSuperAdmin ? (filterCommuneId || undefined) : communeId
+    getAllNews({ page, limit: LIMIT, communeId: effectiveCommuneId })
       .then(({ data, count }) => {
         setArticles(data)
         setTotal(count)
       })
       .finally(() => setLoading(false))
-  }, [page, isSuperAdmin, communeId])
+  }, [page, isSuperAdmin, communeId, filterCommuneId])
 
   useEffect(() => {
     load()
@@ -128,7 +132,10 @@ export default function AdminNews() {
         <h2 className="font-display font-bold text-xl lg:text-2xl text-slate-900">
           Articles ({total})
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {isSuperAdmin && (
+            <CommuneFilter value={filterCommuneId} onChange={(v) => { setFilterCommuneId(v); setPage(1) }} />
+          )}
           {articles.length > 0 && (
             <button
               onClick={() => exportToCSV(
