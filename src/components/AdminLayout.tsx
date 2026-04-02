@@ -18,7 +18,7 @@ const SUPER_ADMIN_NAV = [
 ]
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { logout, isSuperAdmin } = useAuth()
+  const { logout, isSuperAdmin, communeName } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const ADMIN_NAV = isSuperAdmin ? [...BASE_NAV, ...SUPER_ADMIN_NAV] : BASE_NAV
@@ -40,6 +40,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <p className="text-slate-400 text-xs mt-1 uppercase tracking-wider font-semibold">
             Administration
           </p>
+          {isSuperAdmin ? (
+            <div className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-300 bg-amber-900/30 rounded-lg px-2 py-1">
+              <Building2 size={12} />
+              <span className="font-semibold">Super Admin</span>
+            </div>
+          ) : communeName ? (
+            <div className="mt-2 flex items-center gap-1.5 text-[10px] text-indigo-300 bg-indigo-900/30 rounded-lg px-2 py-1 truncate">
+              <Building2 size={12} className="shrink-0" />
+              <span className="font-semibold truncate">{communeName}</span>
+            </div>
+          ) : null}
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
@@ -88,11 +99,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Mobile header */}
       <header className="lg:hidden bg-slate-900 text-white sticky top-0 z-30">
         <div className="flex items-center justify-between px-4 h-14">
-          <div>
-            <span className="font-display font-bold text-sm">Info Jeunes</span>
-            <span className="text-slate-400 text-xs ml-2 uppercase tracking-wider font-semibold">
-              Admin
-            </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <div>
+              <span className="font-display font-bold text-sm">Info Jeunes</span>
+              <span className="text-slate-400 text-xs ml-2 uppercase tracking-wider font-semibold">
+                Admin
+              </span>
+            </div>
+            {isSuperAdmin ? (
+              <span className="text-[9px] text-amber-300 bg-amber-900/30 rounded px-1.5 py-0.5 font-semibold shrink-0">SA</span>
+            ) : communeName ? (
+              <span className="text-[9px] text-indigo-300 bg-indigo-900/30 rounded px-1.5 py-0.5 font-semibold truncate max-w-[120px]">{communeName}</span>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Link

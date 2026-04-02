@@ -302,8 +302,12 @@ export default function HomePage() {
         ) : articles.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
             <p className="text-4xl mb-3">🔍</p>
-            <p className="text-slate-500 font-medium">Aucune information trouvee</p>
-            <p className="text-slate-400 text-sm mt-1">Essayez une autre thematique</p>
+            <p className="text-slate-500 font-medium">Aucune information trouvée</p>
+            <p className="text-slate-400 text-sm mt-1">
+              {selectedTab || selectedSub
+                ? 'Essayez une autre thématique'
+                : 'Aucun article publié pour votre intercommunalité pour le moment'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
