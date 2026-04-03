@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
-import { User, Shield, Search, ChevronDown } from 'lucide-react'
+import { User, Shield, Search, ChevronDown, Building2 } from 'lucide-react'
 import AdminLayout from '../../components/AdminLayout'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/Toast'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import CommuneFilter from '../../components/CommuneFilter'
+import { getAllCommunesSimple } from '../../lib/communeService'
 import { cn, formatDate } from '../../utils'
 import { sanitizeText, isValidRole, LIMITS } from '../../lib/validate'
 
@@ -27,6 +28,8 @@ export default function AdminUsers() {
   const [editingRole, setEditingRole] = useState<string | null>(null)
   const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: string; newRole: string } | null>(null)
   const [filterCommuneId, setFilterCommuneId] = useState('')
+  const [communes, setCommunes] = useState<{ id: string; name: string }[]>([])
+  const [editingCommune, setEditingCommune] = useState<string | null>(null)
   const LIMIT = 20
 
   const { isSuperAdmin, communeId } = useAuth()
@@ -71,6 +74,13 @@ export default function AdminUsers() {
     return () => clearTimeout(timer)
   }, [load])
 
+  // Load communes list for super_admin CC assignment
+  useEffect(() => {
+    if (isSuperAdmin) {
+      getAllCommunesSimple().then(setCommunes).catch(() => setCommunes([]))
+    }
+  }, [isSuperAdmin])
+
   function requestRoleChange(userId: string, newRole: string) {
     if (!isSuperAdmin) {
       toast.error('Seul un super admin peut modifier les rôles')
@@ -111,6 +121,23 @@ export default function AdminUsers() {
     }
   }
 
+  async function assignCommune(userId: string, newCommuneId: string) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ commune_id: newCommuneId || null })
+        .eq('id', userId)
+      if (error) throw error
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, commune_id: newCommuneId || null } : u))
+      )
+      setEditingCommune(null)
+      toast.success('Intercommunalité assignée')
+    } catch {
+      toast.error("Erreur lors de l'assignation de la CC")
+    }
+  }
+
   const totalPages = Math.ceil(total / LIMIT)
 
   function getName(u: any) {
@@ -121,6 +148,11 @@ export default function AdminUsers() {
   function getRoleBadge(role: string) {
     const r = ROLES.find((x) => x.value === role) ?? ROLES[0]
     return <span className={r.color}>{r.label}</span>
+  }
+
+  function getCommuneName(cId: string | null) {
+    if (!cId) return '—'
+    return communes.find((c) => c.id === cId)?.name ?? '—'
   }
 
   return (
@@ -172,6 +204,7 @@ export default function AdminUsers() {
                   <th className="px-4 py-3 text-slate-500 font-medium">Utilisateur</th>
                   <th className="px-4 py-3 text-slate-500 font-medium">Email</th>
                   <th className="px-4 py-3 text-slate-500 font-medium">Rôle</th>
+                  {isSuperAdmin && <th className="px-4 py-3 text-slate-500 font-medium">CC</th>}
                   <th className="px-4 py-3 text-slate-500 font-medium">Inscrit le</th>
                   <th className="px-4 py-3 text-slate-500 font-medium">Statut</th>
                 </tr>
@@ -207,6 +240,33 @@ export default function AdminUsers() {
                         </button>
                       )}
                     </td>
+                    {isSuperAdmin && (
+                      <td className="px-4 py-3">
+                        {editingCommune === u.id ? (
+                          <select
+                            value={u.commune_id ?? ''}
+                            onChange={(e) => assignCommune(u.id, e.target.value)}
+                            onBlur={() => setEditingCommune(null)}
+                            autoFocus
+                            className="input-field py-1 text-xs w-48"
+                          >
+                            <option value="">Aucune CC</option>
+                            {communes.map((c) => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <button
+                            onClick={() => setEditingCommune(u.id)}
+                            className="flex items-center gap-1 text-xs text-slate-500 hover:text-indigo-600 transition-colors cursor-pointer max-w-[180px] truncate"
+                            title={getCommuneName(u.commune_id)}
+                          >
+                            <Building2 size={12} className="shrink-0" />
+                            <span className="truncate">{getCommuneName(u.commune_id)}</span>
+                          </button>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-slate-400 text-xs">
                       {formatDate(u.created_at)}
                     </td>
@@ -247,6 +307,32 @@ export default function AdminUsers() {
                     {u.is_active !== false ? 'Actif' : 'Inactif'}
                   </span>
                 </div>
+                {isSuperAdmin && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 size={12} className="text-slate-400 shrink-0" />
+                    {editingCommune === u.id ? (
+                      <select
+                        value={u.commune_id ?? ''}
+                        onChange={(e) => assignCommune(u.id, e.target.value)}
+                        onBlur={() => setEditingCommune(null)}
+                        autoFocus
+                        className="input-field py-1 text-xs flex-1"
+                      >
+                        <option value="">Aucune CC</option>
+                        {communes.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        onClick={() => setEditingCommune(u.id)}
+                        className="text-xs text-slate-500 hover:text-indigo-600 truncate"
+                      >
+                        {getCommuneName(u.commune_id)}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {editingRole === u.id ? (

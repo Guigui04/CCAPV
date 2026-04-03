@@ -29,7 +29,7 @@ import { useToast } from '../components/Toast'
 import { validatePassword, isValidBirthDate } from '../lib/validate'
 
 export default function ProfilPage() {
-  const { user, profile, isAdmin, logout, updateProfile, changePassword, deleteAccount } = useAuth()
+  const { user, profile, isAdmin, isSuperAdmin, logout, updateProfile, changePassword, deleteAccount, communeName } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -279,26 +279,43 @@ export default function ProfilPage() {
       </Section>
 
       {/* Section: Ma commune */}
-      <Section title="Ma commune" icon={MapPin} delay={0.1}>
-        <p className="text-xs text-slate-400 mb-3">
-          Sélectionne ta commune pour recevoir les alertes locales
-        </p>
-        <div className="relative">
-          <select
-            value={selectedCommune}
-            onChange={(e) => handleCommuneChange(e.target.value)}
-            disabled={savingCommune}
-            className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 appearance-none disabled:opacity-50"
-          >
-            <option value="">Aucune commune sélectionnée</option>
-            {communes.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <ChevronRight size={16} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" />
-        </div>
-        {savingCommune && (
-          <p className="text-xs text-indigo-500 mt-2 font-medium">Enregistrement...</p>
+      <Section title="Mon intercommunalité" icon={MapPin} delay={0.1}>
+        {profile?.role === 'commune_admin' ? (
+          <>
+            <p className="text-xs text-slate-400 mb-3">
+              Votre intercommunalité est assignée par un super administrateur
+            </p>
+            <div className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium text-slate-700">
+              {communeName || 'Aucune CC assignée — contactez un super admin'}
+            </div>
+          </>
+        ) : profile?.role === 'super_admin' ? (
+          <p className="text-xs text-slate-400">
+            En tant que super admin, vous gérez toutes les intercommunalités.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-slate-400 mb-3">
+              Sélectionne ta commune pour recevoir les alertes locales
+            </p>
+            <div className="relative">
+              <select
+                value={selectedCommune}
+                onChange={(e) => handleCommuneChange(e.target.value)}
+                disabled={savingCommune}
+                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 appearance-none disabled:opacity-50"
+              >
+                <option value="">Aucune commune sélectionnée</option>
+                {communes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <ChevronRight size={16} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" />
+            </div>
+            {savingCommune && (
+              <p className="text-xs text-indigo-500 mt-2 font-medium">Enregistrement...</p>
+            )}
+          </>
         )}
       </Section>
 

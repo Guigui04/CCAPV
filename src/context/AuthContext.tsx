@@ -177,7 +177,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fields.first_name !== undefined) sanitized.first_name = fields.first_name?.slice(0, 50)
     if (fields.last_name !== undefined) sanitized.last_name = fields.last_name?.slice(0, 50)
     if (fields.birth_date !== undefined) sanitized.birth_date = fields.birth_date
-    if (fields.commune_id !== undefined) sanitized.commune_id = fields.commune_id || null
+    // commune_admin cannot change their own commune_id — only super_admin can assign it
+    if (fields.commune_id !== undefined) {
+      if (profile?.role === 'commune_admin') {
+        throw new Error('Seul un super admin peut modifier votre intercommunalité')
+      }
+      sanitized.commune_id = fields.commune_id || null
+    }
     if (fields.interests !== undefined) sanitized.interests = fields.interests
 
     const { error } = await supabase
