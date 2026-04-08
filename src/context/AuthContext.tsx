@@ -52,6 +52,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*')
         .eq('id', userId)
         .single()
+
+      // If profile has no commune_id, check if it was set during registration (stored in auth metadata)
+      // This handles the case where signup created the auth user but the profile trigger
+      // didn't copy commune_id from metadata
+      if (data && !data.commune_id) {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        const metaCommuneId = authUser?.user_metadata?.commune_id
+        if (metaCommuneId) {
+          await supabase
+            .from('profiles')
+            .update({ commune_id: metaCommuneId })
+            .eq('id', userId)
+          data.commune_id = metaCommuneId
+        }
+      }
+
       setProfile(data)
 
       // Fetch commune name if user has a commune_id
@@ -117,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${SITE_URL}/login`,
+        emailRedirectTo: `${SITE_URL}/`,
         data: {
           first_name: extra?.first_name?.slice(0, 50) ?? '',
           last_name: extra?.last_name?.slice(0, 50) ?? '',
@@ -177,7 +193,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fields.first_name !== undefined) sanitized.first_name = fields.first_name?.slice(0, 50)
     if (fields.last_name !== undefined) sanitized.last_name = fields.last_name?.slice(0, 50)
     if (fields.birth_date !== undefined) sanitized.birth_date = fields.birth_date
-    if (fields.commune_id !== undefined) sanitized.commune_id = fields.commune_id || null
+    // commune_admin cannot change their own commune_id — only super_admin can assign it
+    if (fields.commune_id !== undefined) {
+      if (profile?.role === 'commune_admin') {
+        throw new Error('Seul un super admin peut modifier votre intercommunalité')
+      }
+      sanitized.commune_id = fields.commune_id || null
+    }
     if (fields.interests !== undefined) sanitized.interests = fields.interests
 
     const { error } = await supabase

@@ -9,7 +9,7 @@ import { cn, formatDate } from '../utils'
 import SEOHead from '../components/SEOHead'
 
 export default function HomePage() {
-  const { profile } = useAuth()
+  const { profile, communeId } = useAuth()
   const [articles, setArticles] = useState<any[]>([])
   const [selectedTab, setSelectedTab] = useState<string | null>(null)
   const [selectedSub, setSelectedSub] = useState<string | null>(null)
@@ -24,7 +24,7 @@ export default function HomePage() {
     const categoryFilter = selectedSub || undefined
     const tabFilter = !selectedSub && selectedTab ? selectedTab : undefined
 
-    getPublishedNews({ category: categoryFilter, tab: tabFilter, limit: 20 })
+    getPublishedNews({ category: categoryFilter, tab: tabFilter, limit: 20, communeId })
       .then(({ data }) => {
         // If user has interests and no filter active, sort to prioritize matching articles
         if (interests.length > 0 && !categoryFilter && !tabFilter) {
@@ -42,7 +42,7 @@ export default function HomePage() {
       })
       .catch(() => setError('Impossible de charger les articles. Verifie ta connexion.'))
       .finally(() => setLoading(false))
-  }, [selectedTab, selectedSub, interests.join(',')])
+  }, [selectedTab, selectedSub, interests.join(','), communeId])
 
   const featured = articles[0]
   const rest = articles.slice(1)
@@ -302,8 +302,12 @@ export default function HomePage() {
         ) : articles.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200">
             <p className="text-4xl mb-3">🔍</p>
-            <p className="text-slate-500 font-medium">Aucune information trouvee</p>
-            <p className="text-slate-400 text-sm mt-1">Essayez une autre thematique</p>
+            <p className="text-slate-500 font-medium">Aucune information trouvée</p>
+            <p className="text-slate-400 text-sm mt-1">
+              {selectedTab || selectedSub
+                ? 'Essayez une autre thématique'
+                : 'Aucun article publié pour votre intercommunalité pour le moment'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">

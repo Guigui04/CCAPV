@@ -8,7 +8,7 @@ import { getCategoryById } from '../constants'
 import { cn, formatDate } from '../utils'
 
 export default function FavorisPage() {
-  const { user } = useAuth()
+  const { user, communeId } = useAuth()
   const [articles, setArticles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -18,9 +18,16 @@ export default function FavorisPage() {
       return
     }
     getBookmarkedArticles(user.id)
-      .then(setArticles)
+      .then((data) => {
+        // Filter: only show articles from user's CC or global articles
+        if (communeId) {
+          setArticles(data.filter((a: any) => !a.commune_id || a.commune_id === communeId))
+        } else {
+          setArticles(data)
+        }
+      })
       .finally(() => setLoading(false))
-  }, [user])
+  }, [user, communeId])
 
   if (!user) {
     return (

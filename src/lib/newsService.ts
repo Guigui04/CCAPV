@@ -11,6 +11,7 @@ export async function getPublishedNews({
   limit = 12,
   search,
   sort = 'recent',
+  communeId,
 }: {
   category?: string
   tab?: string
@@ -18,6 +19,7 @@ export async function getPublishedNews({
   limit?: number
   search?: string
   sort?: SortOption
+  communeId?: string | null
 } = {}) {
   // Clamp limit to prevent abuse
   const safeLimit = Math.min(Math.max(1, limit), 50)
@@ -26,6 +28,11 @@ export async function getPublishedNews({
     .from('news')
     .select('*', { count: 'exact' })
     .eq('status', 'published')
+
+  // Multi-tenant filter: show articles from user's CC + global articles (commune_id is null)
+  if (communeId) {
+    query = query.or(`commune_id.eq.${communeId},commune_id.is.null`)
+  }
 
   if (sort === 'recent') query = query.order('created_at', { ascending: false })
   else if (sort === 'oldest') query = query.order('created_at', { ascending: true })
@@ -106,7 +113,7 @@ export async function createNews(payload: Record<string, unknown>, communeId?: s
   return data
 }
 
-export async function updateNews(id: string, payload: Record<string, unknown>) {
+export async function updateNews(id: string, payload: Record<string, unknown>, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
 
   const safe: Record<string, unknown> = {}
@@ -120,23 +127,36 @@ export async function updateNews(id: string, payload: Record<string, unknown>) {
     safe.image_url = url && isValidSafeUrl(url) ? url : ''
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('news')
     .update(safe)
     .eq('id', id)
-    .select()
-    .single()
+
+  // Ownership check: commune_admin can only update their own CC's articles
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { data, error } = await query.select().single()
   if (error) throw error
   return data
 }
 
-export async function deleteNews(id: string) {
+export async function deleteNews(id: string, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
-  const { error } = await supabase.from('news').delete().eq('id', id)
+
+  let query = supabase.from('news').delete().eq('id', id)
+
+  // Ownership check: commune_admin can only delete their own CC's articles
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { error } = await query
   if (error) throw error
 }
 
-export async function togglePublished(id: string, currentStatus: string) {
+export async function togglePublished(id: string, currentStatus: string, communeId?: string | null) {
   const newStatus = currentStatus === 'published' ? 'draft' : 'published'
-  return updateNews(id, { status: newStatus })
+  return updateNews(id, { status: newStatus }, communeId)
 }

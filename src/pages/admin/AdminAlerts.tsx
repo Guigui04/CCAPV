@@ -20,6 +20,7 @@ function getAlertType(type: string) {
 }
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import CommuneFilter from '../../components/CommuneFilter'
 import { LIMITS } from '../../lib/validate'
 
 export default function AdminAlerts() {
@@ -38,18 +39,20 @@ export default function AdminAlerts() {
   const [alertType, setAlertType] = useState('info')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [filterCommuneId, setFilterCommuneId] = useState('')
 
   const LIMIT = 20
 
   const load = useCallback(() => {
     setLoading(true)
-    getAllNotifications({ page, limit: LIMIT, communeId: isSuperAdmin ? undefined : communeId })
+    const effectiveCommuneId = isSuperAdmin ? (filterCommuneId || undefined) : communeId
+    getAllNotifications({ page, limit: LIMIT, communeId: effectiveCommuneId })
       .then(({ data, count }) => {
         setNotifications(data)
         setTotal(count)
       })
       .finally(() => setLoading(false))
-  }, [page, isSuperAdmin, communeId])
+  }, [page, isSuperAdmin, communeId, filterCommuneId])
 
   useEffect(() => {
     load()
@@ -97,7 +100,7 @@ export default function AdminAlerts() {
           title: title.trim(),
           body: body.trim(),
           type: alertType,
-        })
+        }, isSuperAdmin ? undefined : communeId)
       } else {
         await createNotification({
           title: title.trim(),
@@ -120,14 +123,19 @@ export default function AdminAlerts() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h2 className="font-display font-bold text-2xl text-slate-900">
           Alertes ({total})
         </h2>
-        <button onClick={openCreate} className="btn-primary btn-sm">
-          <Plus size={16} />
-          Nouvelle alerte
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {isSuperAdmin && (
+            <CommuneFilter value={filterCommuneId} onChange={(v) => { setFilterCommuneId(v); setPage(1) }} />
+          )}
+          <button onClick={openCreate} className="btn-primary btn-sm">
+            <Plus size={16} />
+            Nouvelle alerte
+          </button>
+        </div>
       </div>
 
       {/* Form modal */}
@@ -294,6 +302,8 @@ export default function AdminAlerts() {
                     </div>
                   </div>
                 </div>
+                {/* commune_admin can only edit/delete their own CC's alerts, not global ones */}
+                {(isSuperAdmin || n.commune_id) && (
                 <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
                   <button
                     onClick={() => openEdit(n)}
@@ -308,6 +318,7 @@ export default function AdminAlerts() {
                     <Trash2 size={12} /> Supprimer
                   </button>
                 </div>
+                )}
               </div>
               )
             })
@@ -344,7 +355,7 @@ export default function AdminAlerts() {
         message="Cette alerte sera supprimée définitivement."
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {
-          if (deleteId) deleteNotification(deleteId).then(load)
+          if (deleteId) deleteNotification(deleteId, isSuperAdmin ? undefined : communeId).then(load)
           setDeleteId(null)
         }}
       />

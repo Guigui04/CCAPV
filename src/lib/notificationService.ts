@@ -110,7 +110,7 @@ export async function createNotification(payload: {
   return data
 }
 
-export async function updateNotification(id: string, payload: Record<string, unknown>) {
+export async function updateNotification(id: string, payload: Record<string, unknown>, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
 
   const safe: Record<string, unknown> = {}
@@ -121,18 +121,31 @@ export async function updateNotification(id: string, payload: Record<string, unk
     safe.type = payload.type
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('notifications')
     .update(safe)
     .eq('id', id)
-    .select()
-    .single()
+
+  // Ownership check: commune_admin can only update their own CC's notifications
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { data, error } = await query.select().single()
   if (error) throw error
   return data
 }
 
-export async function deleteNotification(id: string) {
+export async function deleteNotification(id: string, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
-  const { error } = await supabase.from('notifications').delete().eq('id', id)
+
+  let query = supabase.from('notifications').delete().eq('id', id)
+
+  // Ownership check: commune_admin can only delete their own CC's notifications
+  if (communeId) {
+    query = query.eq('commune_id', communeId)
+  }
+
+  const { error } = await query
   if (error) throw error
 }

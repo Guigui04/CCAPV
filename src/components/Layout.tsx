@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 ]
 
 export default function Layout({ children }: LayoutProps) {
-  const { isAdmin, loading } = useAuth()
+  const { isAdmin, loading, communeName } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -52,9 +52,16 @@ export default function Layout({ children }: LayoutProps) {
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-indigo-200">
             IJ
           </div>
-          <span className="font-display font-bold text-slate-900 tracking-tight text-sm">
-            Info Jeunes
-          </span>
+          <div className="flex flex-col">
+            <span className="font-display font-bold text-slate-900 tracking-tight text-sm leading-tight">
+              Info Jeunes
+            </span>
+            {communeName && (
+              <span className="text-[10px] font-medium text-indigo-500 leading-tight truncate max-w-[180px]">
+                {communeName}
+              </span>
+            )}
+          </div>
         </Link>
       </header>
 

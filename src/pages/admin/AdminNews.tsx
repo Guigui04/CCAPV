@@ -11,6 +11,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import CommuneFilter from '../../components/CommuneFilter'
 import { useToast } from '../../components/Toast'
 import { validateImageFile, LIMITS } from '../../lib/validate'
 import { exportToCSV } from '../../lib/exportService'
@@ -37,17 +38,20 @@ export default function AdminNews() {
   const [uploading, setUploading] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [filterCommuneId, setFilterCommuneId] = useState('')
   const LIMIT = 20
 
   const load = useCallback(() => {
     setLoading(true)
-    getAllNews({ page, limit: LIMIT, communeId: isSuperAdmin ? undefined : communeId })
+    // super_admin can filter by CC; commune_admin always sees own CC
+    const effectiveCommuneId = isSuperAdmin ? (filterCommuneId || undefined) : communeId
+    getAllNews({ page, limit: LIMIT, communeId: effectiveCommuneId })
       .then(({ data, count }) => {
         setArticles(data)
         setTotal(count)
       })
       .finally(() => setLoading(false))
-  }, [page, isSuperAdmin, communeId])
+  }, [page, isSuperAdmin, communeId, filterCommuneId])
 
   useEffect(() => {
     load()
@@ -79,7 +83,7 @@ export default function AdminNews() {
         status: form.status,
       }
       if (modal?.id) {
-        await updateNews(modal.id, payload)
+        await updateNews(modal.id, payload, isSuperAdmin ? undefined : communeId)
       } else {
         await createNews(payload, communeId)
       }
@@ -128,7 +132,10 @@ export default function AdminNews() {
         <h2 className="font-display font-bold text-xl lg:text-2xl text-slate-900">
           Articles ({total})
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {isSuperAdmin && (
+            <CommuneFilter value={filterCommuneId} onChange={(v) => { setFilterCommuneId(v); setPage(1) }} />
+          )}
           {articles.length > 0 && (
             <button
               onClick={() => exportToCSV(
@@ -186,7 +193,7 @@ export default function AdminNews() {
                       <td className="px-4 py-3">
                         <button
                           onClick={() =>
-                            togglePublished(a.id, a.status).then(load)
+                            togglePublished(a.id, a.status, isSuperAdmin ? undefined : communeId).then(load)
                           }
                         >
                           <span
@@ -248,7 +255,7 @@ export default function AdminNews() {
                       {a.title}
                     </h3>
                     <button
-                      onClick={() => togglePublished(a.id, a.status).then(load)}
+                      onClick={() => togglePublished(a.id, a.status, isSuperAdmin ? undefined : communeId).then(load)}
                       className="shrink-0"
                     >
                       <span
@@ -479,7 +486,7 @@ export default function AdminNews() {
         message="Cette action est irreversible. L'article sera definitivement supprime."
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {
-          if (deleteId) deleteNews(deleteId).then(load)
+          if (deleteId) deleteNews(deleteId, isSuperAdmin ? undefined : communeId).then(load)
           setDeleteId(null)
         }}
       />

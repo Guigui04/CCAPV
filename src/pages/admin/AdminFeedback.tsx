@@ -10,6 +10,7 @@ import { REACTION_LABELS, FEEDBACK_STATUS_LABELS } from '../../constants'
 import { User } from 'lucide-react'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import CommuneFilter from '../../components/CommuneFilter'
 
 export default function AdminFeedback() {
   const { isSuperAdmin, communeId } = useAuth()
@@ -20,11 +21,13 @@ export default function AdminFeedback() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [filterCommuneId, setFilterCommuneId] = useState('')
   const LIMIT = 20
 
   const load = useCallback(() => {
     setLoading(true)
-    getFeedbacks({ status: status || undefined, page, limit: LIMIT, communeId: isSuperAdmin ? undefined : communeId })
+    const effectiveCommuneId = isSuperAdmin ? (filterCommuneId || undefined) : communeId
+    getFeedbacks({ status: status || undefined, page, limit: LIMIT, communeId: effectiveCommuneId })
       .then(async ({ data, count }) => {
         setFeedbacks(data)
         setTotal(count)
@@ -45,7 +48,7 @@ export default function AdminFeedback() {
         }
       })
       .finally(() => setLoading(false))
-  }, [status, page, isSuperAdmin, communeId])
+  }, [status, page, isSuperAdmin, communeId, filterCommuneId])
 
   useEffect(() => {
     load()
@@ -84,9 +87,14 @@ export default function AdminFeedback() {
 
   return (
     <AdminLayout>
-      <h2 className="font-display font-bold text-2xl text-slate-900 mb-6">
-        Feedbacks ({total})
-      </h2>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <h2 className="font-display font-bold text-2xl text-slate-900">
+          Feedbacks ({total})
+        </h2>
+        {isSuperAdmin && (
+          <CommuneFilter value={filterCommuneId} onChange={(v) => { setFilterCommuneId(v); setPage(1) }} />
+        )}
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-5">
@@ -154,7 +162,7 @@ export default function AdminFeedback() {
                 {f.status === 'new' && (
                   <button
                     onClick={() =>
-                      updateFeedbackStatus(f.id, 'processed').then(load)
+                      updateFeedbackStatus(f.id, 'processed', isSuperAdmin ? undefined : communeId).then(load)
                     }
                     className="btn-secondary btn-sm text-xs text-green-700"
                   >
@@ -164,7 +172,7 @@ export default function AdminFeedback() {
                 {f.status !== 'archived' && (
                   <button
                     onClick={() =>
-                      updateFeedbackStatus(f.id, 'archived').then(load)
+                      updateFeedbackStatus(f.id, 'archived', isSuperAdmin ? undefined : communeId).then(load)
                     }
                     className="btn-secondary btn-sm text-xs text-slate-600"
                   >
@@ -211,7 +219,7 @@ export default function AdminFeedback() {
         message="Cette action est irreversible."
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {
-          if (deleteId) deleteFeedback(deleteId).then(load)
+          if (deleteId) deleteFeedback(deleteId, isSuperAdmin ? undefined : communeId).then(load)
           setDeleteId(null)
         }}
       />

@@ -19,7 +19,7 @@ const REACTIONS = Object.entries(REACTION_LABELS)
 export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user, profile } = useAuth()
+  const { user, profile, communeId } = useAuth()
   const toast = useToast()
   const [article, setArticle] = useState<any>(null)
   const [notFound, setNotFound] = useState(false)
@@ -39,6 +39,11 @@ export default function NewsDetailPage() {
       getNewsById(id)
         .then((data) => {
           if (data) {
+            // Access check: article must belong to user's CC or be global (commune_id null)
+            if (communeId && data.commune_id && data.commune_id !== communeId) {
+              setNotFound(true)
+              return
+            }
             setArticle(data)
             // Fire-and-forget view tracking
             trackView(id, profile?.commune_id, user?.id)

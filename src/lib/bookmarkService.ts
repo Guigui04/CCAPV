@@ -15,7 +15,7 @@ export async function getBookmarkedArticles(userId: string) {
   if (!isValidUUID(userId)) throw new Error('Utilisateur invalide')
   const { data, error } = await supabase
     .from('bookmarks')
-    .select('news_id, created_at, news:news_id(id, title, summary, category_id, image_url, created_at)')
+    .select('news_id, created_at, news:news_id(id, title, summary, category_id, image_url, created_at, commune_id)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
   if (error) throw error
