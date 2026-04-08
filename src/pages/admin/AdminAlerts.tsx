@@ -302,6 +302,8 @@ export default function AdminAlerts() {
                     </div>
                   </div>
                 </div>
+                {/* commune_admin can only edit/delete their own CC's alerts, not global ones */}
+                {(isSuperAdmin || n.commune_id) && (
                 <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-50">
                   <button
                     onClick={() => openEdit(n)}
@@ -316,6 +318,7 @@ export default function AdminAlerts() {
                     <Trash2 size={12} /> Supprimer
                   </button>
                 </div>
+                )}
               </div>
               )
             })

@@ -51,4 +51,5 @@
   .badge-yellow { @apply badge bg-yellow-100 text-yellow-700; }
   .badge-red    { @apply badge bg-red-100 text-red-700; }
   .badge-gray   { @apply badge bg-slate-100 text-slate-600; }
+  .badge-purple { @apply badge bg-purple-100 text-purple-700; }
 }

@@ -23,7 +23,7 @@ export async function getFeedbacks({
 
 export async function updateFeedbackStatus(id: string, status: string, communeId?: string | null) {
   if (!isValidUUID(id)) throw new Error('ID invalide')
-  const validStatuses = ['new', 'reviewed', 'archived']
+  const validStatuses = ['new', 'processed', 'archived']
   if (!validStatuses.includes(status)) throw new Error('Statut invalide')
 
   let query = supabase

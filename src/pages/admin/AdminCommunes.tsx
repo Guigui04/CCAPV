@@ -15,6 +15,7 @@ import {
   type EpciType,
   type CommuneFilters,
 } from '../../lib/communeService'
+import { supabase } from '../../lib/supabase'
 import AdminLayout from '../../components/AdminLayout'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { useToast } from '../../components/Toast'
@@ -228,11 +229,32 @@ export default function AdminCommunes() {
   ].filter(Boolean).length
 
   // Filter departments by selected region
+  // We need to fetch the region-department mapping from all communes, not just the current page
+  const [regionDeptMap, setRegionDeptMap] = useState<Record<string, Set<string>>>({})
+
+  useEffect(() => {
+    if (regions.length > 0) {
+      // Build region->department mapping from all communes (not just current page)
+      supabase
+        .from('communes')
+        .select('region, department_code')
+        .not('region', 'is', null)
+        .not('department_code', 'is', null)
+        .then(({ data }) => {
+          const map: Record<string, Set<string>> = {}
+          for (const row of data ?? []) {
+            if (row.region && row.department_code) {
+              if (!map[row.region]) map[row.region] = new Set()
+              map[row.region].add(row.department_code)
+            }
+          }
+          setRegionDeptMap(map)
+        })
+    }
+  }, [regions])
+
   const filteredDepts = filterRegion
-    ? departments.filter(d => {
-        const commune = communes.find(c => c.department_code === d.code)
-        return commune?.region === filterRegion
-      })
+    ? departments.filter(d => regionDeptMap[filterRegion]?.has(d.code))
     : departments
 
   return (

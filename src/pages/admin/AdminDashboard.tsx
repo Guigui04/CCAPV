@@ -19,7 +19,8 @@ export default function AdminDashboard() {
         let usersQ = supabase.from('profiles').select('*', { count: 'exact', head: true })
 
         if (!isSuperAdmin && communeId) {
-          newsQ = newsQ.eq('commune_id', communeId)
+          // commune_admin sees their CC's content + global content (commune_id is null)
+          newsQ = newsQ.or(`commune_id.eq.${communeId},commune_id.is.null`)
           pendingQ = pendingQ.eq('commune_id', communeId)
           totalFbQ = totalFbQ.eq('commune_id', communeId)
           alertsQ = alertsQ.or(`commune_id.eq.${communeId},commune_id.is.null`)
